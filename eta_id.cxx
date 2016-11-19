@@ -74,6 +74,72 @@ public:
   }
 };
 
+class Combo
+{
+public:
+  std::vector<Particle*> kParticles;
+  Particle *kSum;
+  int Npart;
+  Combo(): kSum(new Particle()), Npart(0){}
+  Combo(Combo &c)
+  {
+    for (int k=0;k<c.Npart;k++)
+    {
+      addParticle(c.kParticles[k]);
+    }
+  }
+  //  Combo(Particle *&p): {}
+  ~Combo()
+  {
+    clear();
+    delete kSum;
+  }
+  void clear(){ kParticles.clear();}
+  int addParticle(Particle *&p)
+  {
+    Npart++;
+    kParticles.push_back(p);
+    *kSum +=*p;
+    return Npart;
+  }
+  Particle *getSum(){return kSum;}
+
+  inline Particle* operator [] (const int & i) const
+  {
+    if (i>=Npart||i<0)
+    {
+      std::cout << "Index out of bounds" <<std::endl; 
+      exit(1);
+    }
+    return kParticle[i];
+  } 
+  inline Combo operator + (const Combo & c) const //const: the object that owns the method will not be modified by this method
+  {
+    
+    Combo r;
+    for (int k=0;k<c.Npart;k++)
+    {
+      r.addParticle(c[k]);
+    }
+    for (int k=0;k<this->Npart;k++)
+    {
+      r.addParticle(*this[k]);
+    }
+
+    return r;
+  }
+
+  inline Particle operator += (const Particle & q) 
+  {
+    SetVect(Vect()+q.Vect());
+    SetT(E()+q.T());
+    return *this;
+  }
+
+};
+
+
+
 class Reaction
 {
 public:
@@ -89,6 +155,7 @@ public:
   TFile *kOutFile;
   Float_t *kData;
   TNtuple *kOutData;
+  bool fEMatch;
   
   int kPPid;
   int kNSecondary;
@@ -96,7 +163,7 @@ public:
   std::vector<int> kSPid;
   std::map<int,int> kNSPid;
   Reaction(){strcpy(name,"eta -> pi+ pi- a"),strcpy(filename,"test_eta_pippima.root");init();}
-  Reaction(char *n,char *fn){strcpy(name,n); strcpy(filename,fn); init();}
+  Reaction(char *n,char *fn,bool fEMatch=false): fEMatch(fEMatch) {strcpy(name,n); strcpy(filename,fn); init();}
   int store()
   {
     for (int k=0;k<kSPid.size();k++)
@@ -165,7 +232,7 @@ public:
       kSPid.push_back(pid);
       kNSPid[pid]=1;
       int k = kSPid.size();
-      hSPid.push_back(new TH1F(Form("hNPart%d",k),Form("pid: %d",pid),20,0,20) );
+      hSPid.push_back(new TH1F(Form("hNPart%d",k), TDatabasePDG::Instance()->GetParticle(pid)->GetName(),20,0,20) );
     }
     else
       kNSPid[pid]++;
@@ -204,7 +271,11 @@ public:
     bool minPart=true;
     for (int k;k<kSPid.size();k++)
     {
-      minPart=minPart && (kSecondary[k].size() >= kNSPid[kSPid[k]]);
+      if (fEMatch)
+	minPart=minPart && (kSecondary[k].size() == kNSPid[kSPid[k]]);
+      else
+	minPart=minPart && (kSecondary[k].size() >= kNSPid[kSPid[k]]);
+
       hSPid[k]->Fill(kSecondary[k].size());
     }
     return minPart;
@@ -398,16 +469,17 @@ int main(int argc, char *argv[]){
   //  t->SetMaxEntryLoop(1e4);
   //  t->SetAlias("Eh",Form("(pid==22)*E/0.272 + (pid!=22)*(TMath::Sqrt(P**2 + %f**2)",TDatabasePDG::Instance()->GetParticle("pi-")->Mass() ));
   if (argc ==2) Ne = atoi(argv[1]);
+  else Ne = t->GetEntries();
   std::cout<<"Number of entries to be processed: "<<Ne<<std::endl;
 
-  /*
+  
   /// eta -> pi+ pi- a
-  Reaction r; 
+  Reaction r("eta -> pi+ pi- a","test_pippimaOnly.root",true); 
   r.addPrimary("eta");
   r.addSecondary("pi+");
   r.addSecondary("pi-");
   r.addSecondary("gamma");
-  */
+  
 
   /*
   // K+ -> pi+ pi+ pi-
@@ -418,13 +490,26 @@ int main(int argc, char *argv[]){
   r.addSecondary("pi-");
   */
 
+  /*
   // K- -> pi- pi- pi+
   Reaction r("K+ -> pi- pi- pi+","test_pimpimpip.root");
   r.addPrimary("K-");
   r.addSecondary("pi-");
   r.addSecondary("pi-");
   r.addSecondary("pi+");
+  */
 
+  /*
+  // eta -> pi0 pi0 -> 6a
+  Reaction r("eta -> 6a","test_6a.root",true); //exact match of secondary
+  r.addPrimary("eta");
+  r.addSecondary("gamma");
+  r.addSecondary("gamma");
+  r.addSecondary("gamma");
+  r.addSecondary("gamma");
+  r.addSecondary("gamma");
+  r.addSecondary("gamma");
+  */
 
   /*
   // pi0 -> a a
@@ -448,116 +533,5 @@ int main(int argc, char *argv[]){
   r.kOutData->Print();
   bm->Show("get_pi0");
   return 0;  
-  /*
-  t->GetEntry(0);
-  evnt_prev=evnt;
-  kEvent = evnt_prev;
-  kNu=Nu;
-  kQ2=Q2;
-  kPex=Pex;
-  kPey=Pey;
-  kPez=Pez;
-
-  for ( int i = 0; i < Ne; i++)
-  {
-//    Int_t Ngam=t->Draw("E/0.273:Px:Py:Pz",Form("evnt==%d",i),"goff");
-    t->GetEntry(i);
-    if (pid==22)
-    {
-      TLorentzVector gam(Px,Py,Pz,E/0.272);
-      Gamma gamma(gam,TEc);
-      if (!(-2.2<Yec&&Yec<2.0
-	    //&&-2.5e-9<Xec&&Xec<2.5e-9
-	    //&&-0.1<gam.M2()&&gam.M2()<0.1
-	    &&(((!strcmp(tt,"D"))&&-31.8<Zec&&Zec<-28.40) //D
-	       ||((!strcmp(tt,"Fe"))&&-25.65<Zec&&Zec<-24.26) //Fe
-	       ||((!strcmp(tt,"C"))&&-25.33<Zec&&Zec<-24.10) //C
-	       ||((!strcmp(tt,"Pb"))&&-25.54<Zec&&Zec<-24.36) //Pb
-	       ) ) ) continue;
-      tupleGamma->Fill(gamma.Px(),gamma.Py(),gamma.Pz(),kNu,kQ2,gamma.E(),kEvent);
-      if (evnt == evnt_prev)
-      {
-	VL.push_back(gamma);
-      }
-      else
-      {
-	kEvent=evnt_prev;
-	int n=2;
-	if (VL.size()==2
-	    //&& VL.size()%2 == 0 //Just pair number of particles
-	    ) combine<Gamma>(VL,0,n);
-	VL.clear();
-	VL.push_back(gamma);
-	VLmb.push_back(gamma);
-	if (VLmb.size()==2) // mixed background.
-	{
-	  combine<Gamma>(VLmb,0,n,Gamma(), 0,false, true);
-	  VLmb.clear();
-	  VLmb.push_back(gamma);
-	}
-	kNu=Nu;
-	kQ2=Q2;
-	kPex=Pex;
-	kPey=Pey;
-	kPez=Pez;
-	evnt_prev=evnt;
-      }
-    }
-
-    
-  }
-  tuple->Write("",TObject::kOverwrite);
-  tuplemb->Write("",TObject::kOverwrite);
-  tuplePi0_gamma->Write("",TObject::kOverwrite);
-  tupleGamma->Write("",TObject::kOverwrite);
-  std::cout<<"Done!\n";
-  std::cout<<"Post Processing ...\n";
-  TSpectrum *sp = new TSpectrum(3,1);
-  sp->Search(hW,10,"",0.001);
-
-  hW->SetTitle("Invariant Mass");
-  hW->GetXaxis()->SetTitle("Mass (GeV)");
-  hW->GetYaxis()->SetTitle("dN/dM");
-  hW->Draw();
-
-  Float_t xpos,ypos;
-  xpos = sp->GetPositionX()[0];
-  ypos = sp->GetPositionY()[0];
-  TLatex *tx = new TLatex(xpos*1.2,ypos,Form("%.1f MeV",xpos*1000));
-  tx->Draw();
-  c->SaveAs(Form("%s/inv_Mass.gif",outdir));
-  c->SaveAs(Form("%s/inv_Mass.C",outdir));
-
-  hWmb->SetTitle("Invariant Mass mixing background");
-  hWmb->GetXaxis()->SetTitle("Mass (GeV)");
-  hWmb->GetYaxis()->SetTitle("dN/dM");
-  hWmb->Draw();
-  c->SaveAs(Form("%s/inv_Massmb.gif",outdir));
-  c->SaveAs(Form("%s/inv_Massmb.C",outdir));
-
-  hW2->SetTitle("Invariant Mass^{2}");
-  hW2->GetXaxis()->SetTitle("Mass^{2} (GeV^{2})");
-  hW2->GetYaxis()->SetTitle("dN/dM");
-  hW2->Draw();
-  c->SaveAs(Form("%s/inv_Mass2.gif",outdir));
-  c->SaveAs(Form("%s/inv_Mass2.C",outdir));
-
-  hT->SetTitle("Time difference");
-  hT->GetXaxis()->SetTitle("Time difference (ns)");
-  hT->GetYaxis()->SetTitle("dN/dt");
-  hT->Draw();
-  c->SaveAs(Form("%s/tdiff.gif",outdir));
-  c->SaveAs(Form("%s/tdiff.C",outdir));
-
-  hEpi0_th->SetTitle("Aperture angle vs Energy");
-  hEpi0_th->GetXaxis()->SetTitle("E_{#gamma_{1}} + E_{#gamma_{2}} (GeV)");
-  hEpi0_th->GetYaxis()->SetTitle("Aperture angle (Deg)");
-  hEpi0_th->Draw("col");
-  c->SaveAs(Form("%s/E_th.gif",outdir));
-  c->SaveAs(Form("%s/E_th.C",outdir));
-  
-
-  f->Close();
-  */
 
 }

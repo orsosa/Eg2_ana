@@ -11,7 +11,7 @@ fi
 
 ##PBS_ARRAYID=3
 ##TMPDIR=.
-tt="C-thickD2"
+tt="Fe-thickD2"
 runlist="/user/o/orsosa/osoto_ana/${tt}rn.txt"
 #runlist="/user/o/orsosa/FeThickD2_miss_rn.txt"
 outdir="/data/atlas/users/orsosa/eg2_data_pruned/$tt"

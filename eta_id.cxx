@@ -72,6 +72,10 @@ public:
     SetT(E()+q.T());
     return *this;
   }
+  const char *getName()
+  {
+    return ((TDatabasePDG::Instance())->GetParticle(pid))->GetName(); 
+  }
 };
 
 class Combo
@@ -80,6 +84,7 @@ public:
   std::vector<Particle*> kParticles;
   int Npart;
   Combo(): Npart(0){}
+  
   Combo(Combo &c)
   {
     Npart=0;
@@ -88,6 +93,15 @@ public:
       addParticle(c.kParticles[k]);
     }
   }
+  inline  Double_t Px(){return getSum()->Px();}
+  inline  Double_t Py(){return getSum()->Py();}
+  inline  Double_t Pz(){return getSum()->Pz();}
+  inline  Double_t P2(){return getSum()->P2();}
+  inline  Double_t P(){return getSum()->P();}
+  inline  Double_t E(){return getSum()->E();}
+  inline  Double_t M(){return getSum()->M();}
+
+
   //  Combo(Particle *&p): {}
   ~Combo()
   {
@@ -100,6 +114,7 @@ public:
     kParticles.push_back(p);
     return Npart;
   }
+
   Particle *getSum()
   {
     Particle *p= new Particle();
@@ -119,6 +134,8 @@ public:
     }
     return kParticles[i];
   } 
+
+
   inline Combo operator + (const Combo & c) const //const: the object that owns the method will not be modified by this method
   {
     
@@ -143,6 +160,14 @@ public:
     }
     return *this;
   }
+  
+  void print()
+  {
+    
+    for (int k=0;k<Npart;k++)
+      std::cout<<kParticles[k]->getName()<<" ";
+    std::cout << std::endl;
+  }
 
 };
 
@@ -153,12 +178,14 @@ class Reaction
 public:
   char name[50];
   char filename[50];
-  Particle *kPrimary; //primary
+  Combo *kPrimary; //primary
+
   TParticlePDG *kPdgInfo;
-  std::vector<Particle*>::iterator kPIt;
   std::vector<Particle*> *kSecondary; //all secondary
-  std::vector<Particle*> *kCombo; //partial combinations.
-  std::vector<Particle*> kParticles; // particles in primary candidates.
+
+  //std::vector<Particle*> *kCombo; //partial combinations.
+  std::vector <Combo *> *kCombo;//partial combinations.
+
   std::vector<TH1F*> hSPid;
   TFile *kOutFile;
   Float_t *kData;
@@ -191,7 +218,6 @@ public:
     delete kOutFile;
     delete kPdgInfo;
     hSPid.clear();
-    kParticles.clear();
   }
   void clear()
   {
@@ -208,7 +234,7 @@ public:
   {
     kNSecondary=0;
     kOutFile = new TFile(filename,"recreate");
-    kOutData=new TNtuple("outdata",Form("%s",name),"M:Phx:Phy:Phz:Nu:Q2:Z:Cospq:Pt2:Event");
+    kOutData=new TNtuple("outdata",Form("%s",name),"M:Phx:Phy:Phz:Nu:Q2:Z:Cospq:Pt2:Event:M01:M12");
     kData = new Float_t[kOutData->GetNvar()];
   }
 
@@ -227,7 +253,11 @@ public:
     kData[7] = cospq;
     kData[8] = Pt2;
     kData[9] = evnt_prev;
+    kData[10] =((kPrimary->Npart==3)? ( *(*kPrimary)[0] + *(*kPrimary)[1] ).M() : 0);
+    kData[11] =((kPrimary->Npart==3)? ( *(*kPrimary)[1] + *(*kPrimary)[2] ).M() : 0);
 
+    
+    //kPrimary->print();//printing constitutent
     kOutData->Fill(kData);
   }
   //////////////////////////
@@ -297,15 +327,16 @@ public:
     Pez_prev=Pez;
   }
 
-  int takeN(int N,int kspid, int pos=0,Particle p=Particle(),int count=0)
+  //int takeN(int N,int kspid, int pos=0,Particle p=Particle(),int count=0)
+  int takeN(int N,int kspid, int pos=0,Combo *c= new Combo() ,int count=0)
   {
     if (N<1) return -1;
     if (N!=1)
     {
       for (int k =pos;k<kSecondary[kspid].size()-N+1;k++)
       {
-	//kParticles.push_back(new Particle(*kSecondary[kspid][k]));
-	count=takeN(N-1,kspid,pos+1,p+*kSecondary[kspid][pos],count);
+	c->addParticle(kSecondary[kspid][pos]);
+	count=takeN(N-1,kspid,pos+1,c,count);
       }
     }
 
@@ -313,7 +344,8 @@ public:
     {
       for (int k=pos;k<kSecondary[kspid].size();k++)
       {
-	kCombo[kspid].push_back(new Particle( p+*kSecondary[kspid][k]));
+	c->addParticle(kSecondary[kspid][k]);
+	kCombo[kspid].push_back(new Combo(*c) );
 	//kParticles.push_back(new Particle(*kSecondary[kspid][k]));
 	//std::cout<<__LINE__<<" "<< kCombo[kspid].back()->M()<<std::endl;
 	count++;
@@ -328,7 +360,7 @@ public:
     {
       if(pid == kSPid[k])
       {
-	kSecondary[k].push_back(new Particle(Px,Py,Pz,Ep));
+	kSecondary[k].push_back(new Particle(Px,Py,Pz,Ep,pid));
 	count++;
       }
     }
@@ -338,7 +370,7 @@ public:
   int getCombinations(TChain *t)
   {
     kSecondary=new std::vector<Particle*> [kSPid.size()];
-    kCombo = new std::vector<Particle*> [kSPid.size()];
+    kCombo = new std::vector<Combo*> [kSPid.size()];
 
     t->GetEntry(0);
     setElectVar();
@@ -361,13 +393,13 @@ public:
 	  int Npart = 1;
 	  for (int k =0;k<kSPid.size();k++)
 	  {
-	    takeN(kNSPid[kSPid[k]],k);
+	    takeN(kNSPid[kSPid[k]] ,k);
 	    Npart*=kCombo[k].size();
 	  }
 
 	  for(int k=0;k<Npart;k++)
 	  {
-	    kPrimary = new Particle();
+	    kPrimary = new Combo();
 	    int div=1;
 	    for (int l =0;l<kSPid.size();l++)
 	    {
@@ -481,6 +513,7 @@ int main(int argc, char *argv[]){
   std::cout<<"Number of entries to be processed: "<<Ne<<std::endl;
 
   
+  
   /// eta -> pi+ pi- a
   Reaction r("eta -> pi+ pi- a","test_pippimaOnly.root",true); 
   r.addPrimary("eta");
@@ -489,9 +522,9 @@ int main(int argc, char *argv[]){
   r.addSecondary("gamma");
   
 
-  /*
+  /*  
   // K+ -> pi+ pi+ pi-
-  Reaction r("K+ -> pi+ pi+ pi-","test_pippippim.root");
+  Reaction r("K+ -> pi+ pi+ pi-","test_pippippimOnly.root",true);
   r.addPrimary("K+");
   r.addSecondary("pi+");
   r.addSecondary("pi+");
@@ -538,6 +571,7 @@ int main(int argc, char *argv[]){
 
   r.getCombinations(t);
   r.store();
+  std::cout<<"\n";
   r.kOutData->Print();
   bm->Show("get_pi0");
   return 0;  

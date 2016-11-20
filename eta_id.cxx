@@ -78,11 +78,11 @@ class Combo
 {
 public:
   std::vector<Particle*> kParticles;
-  Particle *kSum;
   int Npart;
-  Combo(): kSum(new Particle()), Npart(0){}
+  Combo(): Npart(0){}
   Combo(Combo &c)
   {
+    Npart=0;
     for (int k=0;k<c.Npart;k++)
     {
       addParticle(c.kParticles[k]);
@@ -92,18 +92,24 @@ public:
   ~Combo()
   {
     clear();
-    delete kSum;
   }
-  void clear(){ kParticles.clear();}
-  int addParticle(Particle *&p)
+  void clear(){ kParticles.clear();Npart=0;}
+  int addParticle(Particle *p)
   {
     Npart++;
     kParticles.push_back(p);
-    *kSum +=*p;
     return Npart;
   }
-  Particle *getSum(){return kSum;}
-
+  Particle *getSum()
+  {
+    Particle *p= new Particle();
+    for (int k=0;k<Npart;k++)
+    {
+      *p+=*kParticles[k];
+    }
+    return p;
+  }
+  
   inline Particle* operator [] (const int & i) const
   {
     if (i>=Npart||i<0)
@@ -111,7 +117,7 @@ public:
       std::cout << "Index out of bounds" <<std::endl; 
       exit(1);
     }
-    return kParticle[i];
+    return kParticles[i];
   } 
   inline Combo operator + (const Combo & c) const //const: the object that owns the method will not be modified by this method
   {
@@ -123,16 +129,18 @@ public:
     }
     for (int k=0;k<this->Npart;k++)
     {
-      r.addParticle(*this[k]);
+      r.addParticle((*this)[k]);
     }
 
     return r;
   }
 
-  inline Particle operator += (const Particle & q) 
+  inline Combo operator += (const Combo & q) 
   {
-    SetVect(Vect()+q.Vect());
-    SetT(E()+q.T());
+    for (int k =0;k<q.Npart;k++)
+    {
+      addParticle(q[k]);
+    }
     return *this;
   }
 
@@ -163,7 +171,7 @@ public:
   std::vector<int> kSPid;
   std::map<int,int> kNSPid;
   Reaction(){strcpy(name,"eta -> pi+ pi- a"),strcpy(filename,"test_eta_pippima.root");init();}
-  Reaction(char *n,char *fn,bool fEMatch=false): fEMatch(fEMatch) {strcpy(name,n); strcpy(filename,fn); init();}
+  Reaction(const char *n,const char *fn,bool fEMatch=false): fEMatch(fEMatch) {strcpy(name,n); strcpy(filename,fn); init();}
   int store()
   {
     for (int k=0;k<kSPid.size();k++)
@@ -246,7 +254,7 @@ public:
     return pid;
   }
 
-  int addSecondary(char *name)
+  int addSecondary(const char *name)
   {
     int pid  = TDatabasePDG::Instance()->GetParticle(name)->PdgCode();
     pushSecondary(pid);
@@ -255,7 +263,7 @@ public:
 
 
   int addPrimary(int pid){kPdgInfo = TDatabasePDG::Instance()->GetParticle(pid); kPPid=kPdgInfo->PdgCode(); return kPPid;}
-  int addPrimary(char *name){kPdgInfo = TDatabasePDG::Instance()->GetParticle(name); kPPid=kPdgInfo->PdgCode(); return kPPid;}
+  int addPrimary(const char *name){kPdgInfo = TDatabasePDG::Instance()->GetParticle(name); kPPid=kPdgInfo->PdgCode(); return kPPid;}
 
 
   bool isPid(int pid)
@@ -386,7 +394,7 @@ public:
   }
 };
 
-void check_dir(char *outdir)
+void check_dir(const char *outdir)
 {
   struct stat sb;
   if (stat(outdir, &sb) != 0)

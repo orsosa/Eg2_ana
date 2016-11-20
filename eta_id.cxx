@@ -234,7 +234,7 @@ public:
   {
     kNSecondary=0;
     kOutFile = new TFile(filename,"recreate");
-    kOutData=new TNtuple("outdata",Form("%s",name),"M:Phx:Phy:Phz:Nu:Q2:Z:Cospq:Pt2:Event:M01:M12");
+    kOutData=new TNtuple("outdata",Form("%s",name),"M:Phx:Phy:Phz:Nu:Q2:Z:Cospq:Pt2:Event:M2_01:M2_02");
     kData = new Float_t[kOutData->GetNvar()];
   }
 
@@ -253,9 +253,9 @@ public:
     kData[7] = cospq;
     kData[8] = Pt2;
     kData[9] = evnt_prev;
-    kData[10] =((kPrimary->Npart==3)? ( *(*kPrimary)[0] + *(*kPrimary)[1] ).M() : 0);
-    kData[11] =((kPrimary->Npart==3)? ( *(*kPrimary)[1] + *(*kPrimary)[2] ).M() : 0);
-
+    kData[10] =((kPrimary->Npart==3)? ( *(*kPrimary)[0] + *(*kPrimary)[1] ).M2() : 0);
+    kData[11] =((kPrimary->Npart==3)? ( *(*kPrimary)[0] + *(*kPrimary)[2] ).M2() : 0);
+    std::cout<<kData[10] <<" :: "<<kData[11]<<std::endl<<std::endl; 
     
     //kPrimary->print();//printing constitutent
     kOutData->Fill(kData);
@@ -514,22 +514,23 @@ int main(int argc, char *argv[]){
 
   
   
+  /*
   /// eta -> pi+ pi- a
-  Reaction r("eta -> pi+ pi- a","test_pippimaOnly.root",true); 
+  Reaction r("eta -> pi+ pi- a","test_pipapimOnly.root",true); 
   r.addPrimary("eta");
   r.addSecondary("pi+");
-  r.addSecondary("pi-");
   r.addSecondary("gamma");
-  
-
-  /*  
-  // K+ -> pi+ pi+ pi-
-  Reaction r("K+ -> pi+ pi+ pi-","test_pippippimOnly.root",true);
-  r.addPrimary("K+");
-  r.addSecondary("pi+");
-  r.addSecondary("pi+");
   r.addSecondary("pi-");
   */
+
+    
+  // K+ -> pi+ pi+ pi-
+  Reaction r("K+ -> pi- pi+ pi+","test_pimpippipOnly.root",true);
+  r.addPrimary("K+");
+  r.addSecondary("pi-");
+  r.addSecondary("pi+");
+  r.addSecondary("pi+");
+  
 
   /*
   // K- -> pi- pi- pi+

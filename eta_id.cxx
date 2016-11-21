@@ -108,6 +108,14 @@ public:
     clear();
   }
   void clear(){ kParticles.clear();Npart=0;}
+
+  void boost() //Go to CM frame.
+  {
+    Particle *p = getSum();
+    for (int k =0;k<Npart;k++)
+      kParticles[k]->Boost(-p->BoostVector());
+  }
+
   int addParticle(Particle *p)
   {
     Npart++;
@@ -253,11 +261,39 @@ public:
     kData[7] = cospq;
     kData[8] = Pt2;
     kData[9] = evnt_prev;
-    kData[10] =((kPrimary->Npart==3)? ( *(*kPrimary)[0] + *(*kPrimary)[1] ).M2() : 0);
-    kData[11] =((kPrimary->Npart==3)? ( *(*kPrimary)[0] + *(*kPrimary)[2] ).M2() : 0);
+
+    kData[10]=((kPrimary->Npart==3)? ( *(*kPrimary)[0] + *(*kPrimary)[1]).M2() : 0);
+    kData[10]=((kPrimary->Npart==3)? ( *(*kPrimary)[0] + *(*kPrimary)[2]).M2() : 0);
+
+    /*
+    kData[10] =((kPrimary->Npart==3)?  TMath::Power(kPdgInfo->Mass(),2) + (*kPrimary)[2]->M2() - 2* (*(*kPrimary)[2]) * ( *(kPrimary->getSum()) ) : 0); //M2_01 = (P - P2)**2 = M**2 + m2**2 -2P*P2 
+
+    kData[11] =((kPrimary->Npart==3)?  TMath::Power(kPdgInfo->Mass(),2) + (*kPrimary)[1]->M2() - 2* (*(*kPrimary)[1]) * ( *(kPrimary->getSum()) ) : 0); //M2_01 = (P - P2)**2 = M**2 + m2**2 -2P*P2 
+
+    
+    std::cout<<"Before boost\n";
+    std::cout<<kPrimary->Px()<<" :: "<<kPrimary->Py()<<" :: "<<kPrimary->Pz()<<"\n";
     std::cout<<kData[10] <<" :: "<<kData[11]<<std::endl<<std::endl; 
+    */
+
+    //kPrimary->boost();
+    
+    /*std::cout<<"After boost\n";
+    std::cout<<kPrimary->Px()<<" :: "<<kPrimary->Py()<<" :: "<<kPrimary->Pz()<<"\n";
+    */
+    
+
+/*
+    kData[10] =((kPrimary->Npart==3)?  TMath::Power(kPdgInfo->Mass(),2) + (*kPrimary)[2]->M2() - 2*(*kPrimary)[2]->E()*kPdgInfo->Mass() : 0); //M2_01 = (P - P2)**2 = M**2 + m2**2 -2*M*E2
+    kData[11] =((kPrimary->Npart==3)?  TMath::Power(kPdgInfo->Mass(),2) + (*kPrimary)[1]->M2() - 2*(*kPrimary)[1]->E()*kPdgInfo->Mass() : 0);
+
+*/    
+      
+    
+    //    std::cout<<kData[10] <<" :: "<<kData[11]<<std::endl<<std::endl; 
     
     //kPrimary->print();//printing constitutent
+    //    delete p;
     kOutData->Fill(kData);
   }
   //////////////////////////
@@ -523,14 +559,14 @@ int main(int argc, char *argv[]){
   r.addSecondary("pi-");
   */
 
-    
+  /*
   // K+ -> pi+ pi+ pi-
-  Reaction r("K+ -> pi- pi+ pi+","test_pimpippipOnly.root",true);
+  Reaction r("K+ -> pi- pi+ pi+","test_pimpippipOnlynb.root",true);
   r.addPrimary("K+");
   r.addSecondary("pi-");
   r.addSecondary("pi+");
   r.addSecondary("pi+");
-  
+  */
 
   /*
   // K- -> pi- pi- pi+
@@ -553,13 +589,13 @@ int main(int argc, char *argv[]){
   r.addSecondary("gamma");
   */
 
-  /*
+  
   // pi0 -> a a
-  Reaction r("pi0 -> a a","test_aa.root");
+  Reaction r("pi0 -> a a","test_aaOnly.root");
   r.addPrimary("pi0");
   r.addSecondary("gamma");
   r.addSecondary("gamma");
-  */
+  
 
   /*
   // K0 -> pi+ pi-

@@ -164,60 +164,8 @@ int main(int argc, char *argv[])
   draw_text.Append(":");
   draw_text.Append(BinName[binorder[k]]);
   }
-
-  //  draw_text.Append(":");
-  //draw_text.Append(BinName[binorder.back()]);
-
+ 
   std::cout<< draw_text<<std::endl;
-
-  /*  TH1F *hNelecLT = new TH1F("hNelecLT",Form("Number of electrons as function of %s",BinName[binorder[0]]),NEdges[binorder[0]]-1,BinEdges[binorder[0]]);
-  TH1F *hNelecST = new TH1F("hNelecST",Form("Number of electrons as function of %s",BinName[binorder[0]]),NEdges[binorder[0]]-1,BinEdges[binorder[0]]);
-
-  //N electrons
-  Float_t ev,ev_prev,bv,bv_prev,vzec, vzec_prev,W,W_prev,Nu,Nu_prev;
-  Int_t Nentries = tde->GetEntries();
-  tde->SetBranchAddress("Event",&ev);
-  tde->SetBranchAddress("Q2",&bv);
-  tde->SetBranchAddress("vzec",&vzec);
-  tde->SetBranchAddress("W",&W);
-  tde->SetBranchAddress("Nu",&Nu);
-
-  tde->GetEntry(0);
-  ev_prev=ev;
-  bv_prev = bv;
-  vzec_prev = vzec;
-  W_prev = W;
-  Nu_prev = Nu;
-  Float_t NeD=0,NeA=0;
-  for (int k =0;k<Nentries;k++)
-  {
-    tde->GetEntry(k);
-    if(ev!=ev_prev)
-    {
-      //      cout <<bv_prev<<"\t"<<W_prev<<"\t"<<Nu_prev<<"\n";
-      if ((bv_prev>1.0)&&(W_prev>2)&&(Nu_prev/5.014)<0.85)//DIS
-      {
-	if (-31.8<vzec&&vzec<-28.40){ hNelecLT->Fill(bv_prev);NeD++;}
-	else if (!(st.CompareTo("Fe"))&& -25.65<vzec_prev&&vzec_prev<-24.26 ){hNelecST->Fill(bv_prev);NeA++;}
-	else if (!(st.CompareTo("C"))&& -25.33<vzec_prev&&vzec_prev<-24.10 ){hNelecST->Fill(bv_prev);NeA++;}
-	else if (!(st.CompareTo("Pb"))&& -25.54<vzec_prev&&vzec_prev<-24.36 ){hNelecST->Fill(bv_prev);NeA++;}
-      }
-      ev_prev=ev;
-      bv_prev = bv;
-      vzec_prev = vzec;
-      W_prev = W;
-      Nu_prev = Nu;
-    }
-  }
-  cout<<"normalization factor "<<st<<"\t"<<NeD/NeA<<endl; 
-  hNelecLT->Draw();
-  c->SaveAs(Form("%s/NelecLT_%s.gif",outdir.Data(),suffix.Data()));
-  c->SaveAs(Form("%s/NelecLT_%s.C",outdir.Data(),suffix.Data()));
-
-  hNelecST->Draw();
-  c->SaveAs(Form("%s/NelecST_%s.gif",outdir.Data(),suffix.Data()));
-  c->SaveAs(Form("%s/NelecST_%s.C",outdir.Data(),suffix.Data()));
-  */
 
   tde= (TTree *) fdataElec->Get("Nelec");
   TString tgs,ss;
@@ -244,6 +192,7 @@ int main(int argc, char *argv[])
   Int_t nbrST = tr1sST->Draw(draw_text.Data(),"","goff");
   Int_t nbgST = tg1sST->Draw(draw_text.Data(),"","goff");
 
+  draw_text.Append(":(mbr_err*mbr_err/mbratio/mbratio)");
   Int_t nbsdLT = tdsLT->Draw(draw_text.Data(),"","goff");
 
   Int_t nbsdST = tdsST->Draw(draw_text.Data(),"","goff");
@@ -281,9 +230,10 @@ int main(int argc, char *argv[])
 
     hMRatio->Fill(tdsST->GetVal(1)[i],tdsST->GetVal(2)[i],MR);
     hMRatio->SetBinError(hMRatio->FindBin(tdsST->GetVal(1)[i],tdsST->GetVal(2)[i]),sigMR);
-
-    hsigUp ->Fill(tdsST->GetVal(NFold)[i] ,1./NhST +  sigAccST*sigAccST/accST/accST);
-    hsigDown ->Fill(tdsLT->GetVal(NFold-1)[i] ,1./NhLT + sigAccLT*sigAccLT/accLT/accLT);
+    Float_t mbrST_e2N = tdsST->GetVal(NFold+1)[i];
+    Float_t mbrLT_e2N = tdsLT->GetVal(NFold+1)[i];
+    hsigUp ->Fill(tdsST->GetVal(NFold)[i] ,1./NhST +  sigAccST*sigAccST/accST/accST + mbrST_e2N);
+    hsigDown ->Fill(tdsLT->GetVal(NFold-1)[i] ,1./NhLT + sigAccLT*sigAccLT/accLT/accLT + mbrLT_e2N);
 
     hNhST ->Fill(tdsST->GetVal(NFold)[i],NhST/accST);
     hNhLT ->Fill(tdsLT->GetVal(NFold)[i],NhLT/accLT);

@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
     BinSchema.Append(BinName[kf]);
   }
   
-  branch.Append(":amp:bin:mbratio:amp_e");
+  branch.Append(":amp:bin:mbratio:mbr_err");
   BinSchema.Append(")");
     
   tuple1s = new TNtuple("Amp_binned",Form("amplitude with mb ratio %s",BinSchema.Data()),branch.Data() );

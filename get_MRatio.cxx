@@ -4,6 +4,7 @@
 #include "TROOT.h"
 #include "TFile.h"
 #include "TNtuple.h"
+#include "TTree.h"
 #include "TGraph.h"
 #include "TMath.h"
 #include "Math/WrappedTF1.h"
@@ -55,7 +56,7 @@ int main(int argc, char *argv[])
   if (dataLTfile.IsNull())  dataLTfile.Append(Form("data_%sD_D/binned.root",st.Data()));
   if (dataSTfile.IsNull())  dataSTfile.Append(Form("data_%sD_%s/binned.root",st.Data(),st.Data()));
 
-  if (dataElecfile.IsNull())  dataElecfile.Append(Form("pi0_%sD.root",st.Data()));
+  if (dataElecfile.IsNull())  dataElecfile.Append( Form("Ne_TargConf.root") );
 
   //  if (st.IsNull()) st.Append("C");
   outdir.Append(st.Data());
@@ -113,7 +114,8 @@ int main(int argc, char *argv[])
 
   //TH1F *hgsim,*hrec;
   TGraph *grec, *ggsim;
-  TNtuple *tr1LT, *tr1sLT,  *tg1LT, *tg1sLT, *tr1ST, *tr1sST,  *tg1ST, *tg1sST, *tdLT, *tdsLT, *tdST, *tdsST, *tde;
+  TNtuple *tr1LT, *tr1sLT,  *tg1LT, *tg1sLT, *tr1ST, *tr1sST,  *tg1ST, *tg1sST, *tdLT, *tdsLT, *tdST, *tdsST;
+  TTree *tde;
 
 
   tr1LT = (TNtuple *)frLT ->Get("raw_binned");
@@ -134,7 +136,6 @@ int main(int argc, char *argv[])
   tdST = (TNtuple *)fdataST ->Get("raw_binned");
   tdsST = (TNtuple *)fdataST ->Get("Amp_binned");
 
-  tde= (TNtuple *) fdataElec->Get("ElecData");
 
   //  Nr = tr1->GetEntries();
   //Ng = tg1->GetEntries();
@@ -158,14 +159,18 @@ int main(int argc, char *argv[])
   draw_text.Append(")");
   */
   TString draw_text="(amp*mbratio)";
+  for (int k=0;k<NFold;k++)
+  {
   draw_text.Append(":");
-  draw_text.Append(BinName[binorder[0]]);
+  draw_text.Append(BinName[binorder[k]]);
+  }
 
-  draw_text.Append(":");
-  draw_text.Append(BinName[binorder.back()]);
+  //  draw_text.Append(":");
+  //draw_text.Append(BinName[binorder.back()]);
+
   std::cout<< draw_text<<std::endl;
 
-  TH1F *hNelecLT = new TH1F("hNelecLT",Form("Number of electrons as function of %s",BinName[binorder[0]]),NEdges[binorder[0]]-1,BinEdges[binorder[0]]);
+  /*  TH1F *hNelecLT = new TH1F("hNelecLT",Form("Number of electrons as function of %s",BinName[binorder[0]]),NEdges[binorder[0]]-1,BinEdges[binorder[0]]);
   TH1F *hNelecST = new TH1F("hNelecST",Form("Number of electrons as function of %s",BinName[binorder[0]]),NEdges[binorder[0]]-1,BinEdges[binorder[0]]);
 
   //N electrons
@@ -174,8 +179,8 @@ int main(int argc, char *argv[])
   tde->SetBranchAddress("Event",&ev);
   tde->SetBranchAddress("Q2",&bv);
   tde->SetBranchAddress("vzec",&vzec);
-  tde->SetBranchAddress("W",&ev);
-  tde->SetBranchAddress("Nu",&ev);
+  tde->SetBranchAddress("W",&W);
+  tde->SetBranchAddress("Nu",&Nu);
 
   tde->GetEntry(0);
   ev_prev=ev;
@@ -183,17 +188,19 @@ int main(int argc, char *argv[])
   vzec_prev = vzec;
   W_prev = W;
   Nu_prev = Nu;
+  Float_t NeD=0,NeA=0;
   for (int k =0;k<Nentries;k++)
   {
     tde->GetEntry(k);
     if(ev!=ev_prev)
     {
+      //      cout <<bv_prev<<"\t"<<W_prev<<"\t"<<Nu_prev<<"\n";
       if ((bv_prev>1.0)&&(W_prev>2)&&(Nu_prev/5.014)<0.85)//DIS
       {
-	if (-31.8<vzec&&vzec<-28.40) hNelecLT->Fill(bv_prev);
-	else if (!(st.CompareTo("Fe"))&& -25.65<vzec_prev&&vzec_prev<-24.26 )hNelecST->Fill(bv_prev);
-	else if (!(st.CompareTo("C"))&& -25.33<vzec_prev&&vzec_prev<-24.10 )hNelecST->Fill(bv_prev);
-	else if (!(st.CompareTo("Pb"))&& -25.54<vzec_prev&&vzec_prev<-24.36 )hNelecST->Fill(bv_prev);
+	if (-31.8<vzec&&vzec<-28.40){ hNelecLT->Fill(bv_prev);NeD++;}
+	else if (!(st.CompareTo("Fe"))&& -25.65<vzec_prev&&vzec_prev<-24.26 ){hNelecST->Fill(bv_prev);NeA++;}
+	else if (!(st.CompareTo("C"))&& -25.33<vzec_prev&&vzec_prev<-24.10 ){hNelecST->Fill(bv_prev);NeA++;}
+	else if (!(st.CompareTo("Pb"))&& -25.54<vzec_prev&&vzec_prev<-24.36 ){hNelecST->Fill(bv_prev);NeA++;}
       }
       ev_prev=ev;
       bv_prev = bv;
@@ -202,7 +209,7 @@ int main(int argc, char *argv[])
       Nu_prev = Nu;
     }
   }
-
+  cout<<"normalization factor "<<st<<"\t"<<NeD/NeA<<endl; 
   hNelecLT->Draw();
   c->SaveAs(Form("%s/NelecLT_%s.gif",outdir.Data(),suffix.Data()));
   c->SaveAs(Form("%s/NelecLT_%s.C",outdir.Data(),suffix.Data()));
@@ -210,6 +217,26 @@ int main(int argc, char *argv[])
   hNelecST->Draw();
   c->SaveAs(Form("%s/NelecST_%s.gif",outdir.Data(),suffix.Data()));
   c->SaveAs(Form("%s/NelecST_%s.C",outdir.Data(),suffix.Data()));
+  */
+
+  tde= (TTree *) fdataElec->Get("Nelec");
+  TString tgs,ss;
+  Ssiz_t start=0;
+  char tg[10];
+  Double_t NeD,NeA;
+  tde->SetBranchAddress("targ_conf",tg);
+  tde->SetBranchAddress("NeD",&NeD);
+  tde->SetBranchAddress("NeA",&NeA);
+
+  for (int k=0;k<tde->GetEntries();k++)
+  {
+    start =0;
+    tde->GetEntry(k);
+    tgs=tg;
+    tgs.Tokenize(ss,start,(const char*)"-");
+    if(ss==st){break;}
+  }
+
 
   Int_t nbrLT = tr1sLT->Draw(draw_text.Data(),"","goff");
   Int_t nbgLT = tg1sLT->Draw(draw_text.Data(),"","goff");
@@ -226,8 +253,10 @@ int main(int argc, char *argv[])
 
   cout<<nbrLT<<"\t"<<nbgLT<<endl;
   if (nbrLT!=nbgLT) cout<<"warning nbins different: "<<endl;
-  std::cout<<"Q2   \tZST\tNhST        \tAccST         \tZLT\tNhLT      \taccLT\n";
-  Float_t NeST1D=0,NeLT1D=0;
+  
+  for (int k=0; k<NFold;k++) std::cout<<BinName[binorder[k]]<<"\t";
+
+  std::cout<<"NhST\t\tAccST\t\tNhLT\t\taccLT\n";
   for (int i=0; i<nbrLT;i++)
   {
 
@@ -238,40 +267,33 @@ int main(int argc, char *argv[])
 
     if(no_acc)
     {
-      sigAccST = 0.;
-      sigAccLT = 0.;
+      sigAccST = sigAccLT = 0.;
       accLT=accST=1.;
     }
 
     
-    Float_t NeST = hNelecST->GetBinContent(hNelecST->FindBin(tdsST->GetVal(1)[i]));
-    Float_t NeLT = hNelecLT->GetBinContent(hNelecLT->FindBin(tdsLT->GetVal(1)[i]));
-
-
-    NeST1D+=NeST;
-    NeLT1D+=NeLT;
-
-
     Float_t NhST = tdsST->GetVal(0)[i];
     Float_t NhLT = tdsLT->GetVal(0)[i];
 
-    Float_t MR = ( NhST/NeST*(1./accST) ) / ( NhLT/NeLT*(1./accLT) ) ;
+    Float_t MR = ( NhST/NeA/accST ) / ( NhLT/NeD/accLT ) ;
 
-    Float_t sigMR = MR*TMath::Sqrt( 1./NhST + 1./NhLT + 1./NeST + 1./NeLT + sigAccST*sigAccST/(accST*accST) + sigAccLT*sigAccLT/(accLT*accLT) );// To be Checked, wrong probably.
+    Float_t sigMR = MR*TMath::Sqrt( 1./NhST + 1./NhLT + 1./NeA + 1./NeD + sigAccST*sigAccST/(accST*accST) + sigAccLT*sigAccLT/(accLT*accLT) );// To be Checked, wrong probably.
 
     hMRatio->Fill(tdsST->GetVal(1)[i],tdsST->GetVal(2)[i],MR);
     hMRatio->SetBinError(hMRatio->FindBin(tdsST->GetVal(1)[i],tdsST->GetVal(2)[i]),sigMR);
 
-    hsigUp ->Fill(tdsST->GetVal(2)[i] ,1./NhST +  sigAccST*sigAccST/accST/accST);
-    hsigDown ->Fill(tdsLT->GetVal(2)[i] ,1./NhLT + sigAccLT*sigAccLT/accLT/accLT);
+    hsigUp ->Fill(tdsST->GetVal(NFold)[i] ,1./NhST +  sigAccST*sigAccST/accST/accST);
+    hsigDown ->Fill(tdsLT->GetVal(NFold-1)[i] ,1./NhLT + sigAccLT*sigAccLT/accLT/accLT);
 
-    hNhST ->Fill(tdsST->GetVal(2)[i],NhST/accST);
-    hNhLT ->Fill(tdsLT->GetVal(2)[i],NhLT/accLT);
+    hNhST ->Fill(tdsST->GetVal(NFold)[i],NhST/accST);
+    hNhLT ->Fill(tdsLT->GetVal(NFold)[i],NhLT/accLT);
 
     /*    hNhST ->Fill(tdsST->GetVal(2)[i],NhST*(1./accST)/NeST);
     hNhLT ->Fill(tdsLT->GetVal(2)[i],NhLT*(1./accLT)/NeLT);
     */
-    std::cout<<tdsST->GetVal(1)[i]<<"\t"<<tdsST->GetVal(2)[i]<<"\t"<<NhST<<"\t"<<"\t"<<accST<<"\t"<<tdsLT->GetVal(2)[i]<<"\t"<<NhLT<<"\t"<<accLT<<"\n";
+    for (int k=1; k<NFold+1;k++) std::cout<<tdsST->GetVal(k)[i]<<"\t";
+
+    std::cout<<NhST<<"\t\t"<<accST<<"\t\t"<<NhLT<<"\t\t"<<accLT<<"\n";
     /*    if (acc)hacc->Fill(tr1s->GetVal(1)[i],tr1s->GetVal(0)[i]/tg1s->GetVal(0)[i]);
     if (acc)hacc->SetBinError(hacc->FindBin(tr1s->GetVal(1)[i]),(tr1s->GetVal(0)[i]/tg1s->GetVal(0)[i])*TMath::Sqrt(1./tr1s->GetVal(0)[i]+1./tg1s->GetVal(0)[i]));
     std::cout<<tr1s->GetVal(1)[i]<<"\t"<<tr1s->GetVal(0)[i]<<"\t"<<tg1s->GetVal(0)[i]<<"\t"<<tr1s->GetVal(0)[i]/tg1s->GetVal(0)[i]<<std::endl;
@@ -287,28 +309,15 @@ int main(int argc, char *argv[])
     c->SaveAs(Form("%s/hMRatio%s.gif",outdir.Data(),suffix.Data()));
     c->SaveAs(Form("%s/hMRatio%s.C",outdir.Data(),suffix.Data()));
 
-    TH1D *hprojy = hMRatio->ProjectionY(Form("hMR_%s",BinName[binorder.back()]),1,hMRatio->GetNbinsX(),"e");
-    hprojy->SetTitle(Form("Multiplicity Ratio (%s)",BinName[binorder.back()]));
-    hprojy->SetMarkerColor(kBlack);
-    hprojy->SetMarkerStyle(kFullDotLarge);
-    hprojy->SetStats(0);
-    hprojy->GetXaxis()->SetTitle(Form("%s",BinName[binorder.back()]));
-    hprojy->GetYaxis()->SetTitle("R");
-    hprojy->GetYaxis()->SetTitleOffset(1.1);
-    //hprojy->Draw("ep");
-    //    c->SaveAs(Form("%s/hMRatio_proj%s_%s.gif",outdir.Data(),BinName[binorder.back()],suffix.Data()));
-    //c->SaveAs(Form("%s/hMRatio_proj%s_%s.C",outdir.Data(),BinName[binorder.back()],suffix.Data()));
-
-    for (int k = 1; k<=hMRatioProj->GetNbinsX();k++)
+    for (int k = 1; k<=hNhST->GetNbinsX();k++)
     {
       Float_t R = (hNhST->GetBinContent(k)) / (hNhLT->GetBinContent(k));
 
-      Float_t MR = R*hNelecLT->GetEntries()/hNelecST->GetEntries();
+      Float_t MR = R*NeD/NeA;
       //      Float_t MR = R;
       hMRatioProj->SetBinContent(k,MR);
-      Float_t err = R*TMath::Sqrt( (hsigUp->GetBinContent(k) / (hNhST->GetBinContent(k)*hNhST->GetBinContent(k) ) + hsigDown->GetBinContent(k) / (hNhLT->GetBinContent(k)*hNhLT->GetBinContent(k))  + 1. / hNelecLT->GetEntries() + 1./hNelecST->GetEntries()) ) ;
+      Float_t err = R*TMath::Sqrt( (hsigUp->GetBinContent(k) / (hNhST->GetBinContent(k)*hNhST->GetBinContent(k) ) + hsigDown->GetBinContent(k) / (hNhLT->GetBinContent(k)*hNhLT->GetBinContent(k))  + 1. / NeA + 1./NeD ) ) ;
       hMRatioProj->SetBinError(k,err);
-      
     }
 
     hMRatioProj->SetTitle(Form("Multiplicity Ratio (%s)",BinName[binorder.back()]));

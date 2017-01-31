@@ -25,10 +25,10 @@ TH2F *hEpi0_th;
 //Float_t kMPi0=0.135;//Got from sim.
 //Float_t kSPi0=0.00066297;//Got from sim.
 
-Float_t kMPi0=1.33196e-1;//Got from sim.
-Float_t kSPi0=1.94034e-2;//Got from sim.
-//Float_t kMPi0=5.39609e-01;
-//Float_t kSPi0=5.98542e-02;
+//Float_t kMPi0=1.33196e-1;//Got from sim.
+//Float_t kSPi0=1.94034e-2;//Got from sim.
+Float_t kMPi0=5.39609e-01;
+Float_t kSPi0=5.98542e-02;
 
 Float_t kPt2,kEvent; 
 TNtuple *tuple1,*tuple2;
@@ -57,7 +57,7 @@ int main(int argc, char *argv[]){
 
   TBenchmark *bm = new TBenchmark(); 
   bm->Start("get_pi0");
-  char *indir = Form("pi0_eta_id_pictures_gsim_2aOnly_%sD_%s",st,tt);
+  char *indir = Form("eta_id_pictures_gsim_2aOnly_%sD_%s",st,tt);
 
   struct stat sb;
   if (stat(indir, &sb) != 0)
@@ -183,8 +183,11 @@ int main(int argc, char *argv[]){
     
     }
   }
-  TF1 *fmb = new TF1("fmb","pol2",0.0,0.2);
-  TH1F *hM = new TH1F("hM","h",75,0.08,0.19);
+  //  TF1 *fmb = new TF1("fmb","pol2",0.0,0.2);
+  //TH1F *hM = new TH1F("hM","h",75,0.08,0.19);
+  TF1 *fmb = new TF1("fmb","pol2",0.45,0.65);
+  TH1F *hM = new TH1F("hM","h",75,0.45,0.65);
+
   hM->SetMarkerStyle(kOpenCircle);
   hM->SetMarkerColor(kBlue);
   hM->GetXaxis()->SetTitle("M_{#gamma#gamma} (GeV)");

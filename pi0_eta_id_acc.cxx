@@ -20,10 +20,10 @@ TH1F *hWmb;
 TH1F *hW2mb;
 TH1F *hT;
 TH2F *hEpi0_th;
-Float_t kMPi0=1.33196e-1;//Got from sim.
-Float_t kSPi0=1.94034e-2;//Got from sim.
-//Float_t kMPi0=5.39609e-01;
-//Float_t kSPi0=5.98542e-02;
+//Float_t kMPi0=1.33196e-1;//Got from sim.
+//Float_t kSPi0=1.94034e-2;//Got from sim.
+Float_t kMPi0=5.39609e-01;
+Float_t kSPi0=5.98542e-02;
 
 Float_t kPt2,kEvent; 
 TNtuple *tuple;
@@ -132,7 +132,7 @@ Gamma & operator+ (const Gamma &gr)
 
 int main(int argc, char *argv[]){
   TBenchmark *bm = new TBenchmark();
-  char *outdir = Form("pi0_eta_id_pictures_sim_2aOnly_%sD_%s",st,tt);
+  char *outdir = Form("eta_id_pictures_sim_2aOnly_%sD_%s",st,tt);
   struct stat sb;
   if (stat(outdir, &sb) != 0)
   {
@@ -147,7 +147,8 @@ int main(int argc, char *argv[]){
   std::vector<Gamma> VLmb;
   TChain *t = new TChain();
   //  t->Add("/user/o/orsosa/osoto_ana/local/prune_simul.root/ntuple_accept");
-  t->Add("/data/atlas/users/orsosa/eg2_sim_pruned/Fe/pruned_simul_*.root/ntuple_accept");
+  t->Add("/data/atlas/users/orsosa/eg2_sim_pruned/C/pruned_simul_*.root/ntuple_accept");
+
   Long_t Ne = (Long_t)t->GetEntries();
   std::cout<<"Total Number of entries: "<<Ne<<std::endl;
   hW = new TH1F("hW","Wgam-gam",1000,0,1);

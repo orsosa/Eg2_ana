@@ -50,8 +50,8 @@ int main(int argc, char **argv)
   TDatabasePDG pdg;
   Double_t kMe =pdg.GetParticle(11)->Mass();
   const char* NtupleName;
-  const char* VarList = "TargType:Q2:Nu:Xb:W:SectorEl:ThetaPQ:PhiPQ:Zh:Pt:W2p:Xf:T:P:T4:deltaZ:E:Ee:Pe:Ect:Sct:Ecr:Scr:evnt:Px:Py:Pz:Xe:Ye:Ze:Xec:Yec:Zec:TEc:ECX:ECY:ECZ:Pex:Pey:Pez:Ein:Eout:Eine:Eoute:pid:Betta";
-  Int_t Nvar = 46;
+  const char* VarList = "TargType:Q2:Nu:Xb:W:SectorEl:ThetaPQ:PhiPQ:Zh:Pt:W2p:Xf:T:P:T4:deltaZ:E:Ee:Pe:Ect:Sct:Ecr:Scr:evnt:Px:Py:Pz:Xe:Ye:Ze:Xec:Yec:Zec:TEc:ECX:ECY:ECZ:Pex:Pey:Pez:Ein:Eout:Eine:Eoute:pid:Betta:vxh:vyh:vzh";
+  Int_t Nvar = 49;
   Float_t *vars = new Float_t[Nvar];
   TVector3 *vert;
   TIdentificator *t = new TIdentificator(input);
@@ -67,9 +67,16 @@ int main(int argc, char **argv)
     output = new TFile("local/prune_simul.root", "RECREATE", "Data of particles");
   }
 
-  TNtuple *ntuple = new TNtuple(NtupleName,"pi0 pluses",VarList);
+  TNtuple *tElec = new TNtuple("Electrons","All Electrons","Q2:W:Nu:vzec:Pex:Pey:Pez:event");
+  Float_t DataElec[tElec->GetNvar()];
+
+  TNtuple *ntuple = new TNtuple(NtupleName,"stable particles",VarList);
   TNtuple *ntuple_thrown = 0;
-  if(simul_key == 1) ntuple_thrown = new TNtuple("ntuple_thrown","Pion pluses",VarList);
+  TNtuple *e_thrown=0;
+  if(simul_key == 1) {
+    ntuple_thrown = new TNtuple("ntuple_thrown","pi0 pluses",VarList);
+    e_thrown = new TNtuple("Electrons","All Electrons","Q2:W:Nu:vzec:Pex:Pey:Pez:event");
+}
 
 //  TH1F *ht = new TH1F("ht","tdiff",1000,-15,15); 
   cout.width(4);
@@ -117,17 +124,31 @@ int main(int argc, char **argv)
       }
     }
 */
-    if(nRows>0 && (t->GetCategorization(0)) == "electron" && t -> Q2() > 1. && t -> W() > 2. && t -> Nu() / 5.015 < 0.85)
-//    if(nRows>0 && (t->GetCategorization(0)) == "electron")  
+    const char * tt = "C";
+    //if(nRows>0 && (t->GetCategorization(0,tt)) == "electron" && t -> Q2() > 1. && t -> W() > 2. && t -> Nu() / 5.015 < 0.85)
+    if(nRows>0 && (t->GetCategorization(0,tt)) == "electron")  
     {
+      DataElec[0] = t -> Q2();
+      DataElec[1] = t -> W();
+      DataElec[2] = t -> Nu();
+      vert = t->GetCorrectedVert();
+      Float_t vzec=vert->Z(); 
+      DataElec[3] = vzec; 
+      DataElec[4] = t -> Px(0);
+      DataElec[5] = t -> Py(0);
+      DataElec[6] = t -> Pz(0);
+      DataElec[7] = k;
+
+      tElec->Fill(DataElec);
+
       std::cout<<"event: "<<input->GetCurrentEvent()<<std::endl;
       //std::cout<<"got electron data"<<std::endl;
       Int_t NmbPion = 0;
       for (Int_t i = 1; i < nRows; i++) 
       {
 	std::cout<<"\tnr: "<<i<<std::endl; 
-      	TString category = t->GetCategorization(i);
-      	if (category == "gamma" || category == "pi-" || category == "high energy pion +" || category == "low energy pion +") 
+      	TString category = t->GetCategorization(i,tt);
+      	if (category == "gamma" || category == "pi-" || category == "high energy pion +" || category == "low energy pion +" || category == "s_electron" || category == "positron") 
         {
 	        vars[0] = t -> ElecVertTarg();
 	        vars[1] = t -> Q2();
@@ -175,15 +196,37 @@ int main(int argc, char **argv)
           vars[41] = t->Eout(i);
           vars[42] = t->Ein(0);
           vars[43] = t->Eout(0);
-	  vars[44] = ((category == "gamma")?22:((category == "pi-")?-211:211));
+	  vars[44] = ((category == "gamma")?22:
+		      ((category == "pi-")?-211:
+		       (( category == "high energy pion +" || category == "low energy pion +")?211:
+			((category == "s_electron")?11:-11)
+			)
+		       )
+		      );
 	  vars[45] = t->Betta(i);
+          vars[46] = t->X(i);
+          vars[47] = t->Y(i);
+          vars[48] = t->Z(i);
+
 	  ntuple->Fill(vars);
     	  }
       }
     }
 
+
     if(simul_key == 1 && t -> Id(0,1)==11 /*&& t -> Q2(1) > 1. && t -> W(1) > 2. && t -> Nu(1) / 5.015 < 0.85*/) 
     {
+      DataElec[0] = t -> Q2(1);
+      DataElec[1] = t -> W(1);
+      DataElec[2] = t -> Nu(1);
+      DataElec[3] = t -> Z(0,1); 
+      DataElec[4] = t -> Px(0,1);
+      DataElec[5] = t -> Py(0,1);
+      DataElec[6] = t -> Pz(0,1);
+      DataElec[7] = k;
+
+      e_thrown->Fill(DataElec);
+
       //      std::cout<<"got electron gsim"<<std::endl;
       Int_t NmbPion = 0;
       for(Int_t i=1; i < input->GetNRows("GSIM"); i++) 
@@ -239,6 +282,10 @@ int main(int argc, char **argv)
 	  vars[43] = 0;
 	  vars[44] = t -> Id(i,1);
 	  vars[45] = t->Betta(i,1);
+          vars[46] = t->X(i,1);
+          vars[47] = t->Y(i,1);
+          vars[48] = t->Z(i,1);
+
 	  ntuple_thrown->Fill(vars);
 
     	  }

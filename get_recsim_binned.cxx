@@ -25,10 +25,10 @@ TH1F *hWmb;
 TH1F *hW2mb;
 TH1F *hT;
 TH2F *hEpi0_th;
-Float_t kMPi0=1.33196e-1;//Got from sim.
-Float_t kSPi0=1.94034e-2;//Got from sim.
-//Float_t kMPi0=5.39609e-01;
-//Float_t kSPi0=5.98542e-02;
+//Float_t kMPi0=1.33196e-1;//Got from sim.
+//Float_t kSPi0=1.94034e-2;//Got from sim.
+Float_t kMPi0=5.39609e-01;
+Float_t kSPi0=5.98542e-02;
 
 Float_t kPt2,kEvent; 
 TNtuple *tuple1, *tuple2, *tuple1s, *tuple2s, *pt1, *pt2;
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]){
   TStyle *s= new TStyle();
   s->SetOptFit();
   s->cd();
-  char *indir = Form("pi0_eta_id_pictures_sim_2aOnly_%sD_%s",st,tt);
+  char *indir = Form("eta_id_pictures_sim_2aOnly_%sD_%s",st,tt);
   struct stat sb;
   if (stat(indir, &sb) != 0)
   {
@@ -132,7 +132,8 @@ int main(int argc, char *argv[]){
   pt1 = new TNtuple("pt1","parameters 1","p0:p1:p2:p3:p4:binq2:binnu:binz");
   pt2 = new TNtuple("pt2","parameters 2","p0:p1:p2:p3:p4:binpt2:binnu:binz");
   read_parameters(indir);
-  Float_t minRange = 0.08, maxRange=0.19;
+  //  Float_t minRange = 0.08, maxRange=0.19;
+  Float_t minRange = 0.45, maxRange=0.65;
   fmb = new TF1("fmb","pol2",minRange,maxRange);
   fpeak = new TF1("fpeak","gaus",minRange,maxRange);
   fsig = new TF1("fsig","fmb+fpeak",minRange,maxRange);
@@ -196,7 +197,9 @@ int main(int argc, char *argv[]){
   }
   
   //  TF1 *fmb = new TF1("fmb","pol2",0.0,0.2);
-  TH1F *hM = new TH1F("hM","h",75,0.08,0.19);
+  //  TH1F *hM = new TH1F("hM","h",75,0.08,0.19);
+  TH1F *hM = new TH1F("hM","h",75,0.45,0.65);
+
   hM->SetMarkerStyle(kOpenCircle);
   hM->SetMarkerColor(kBlue);
   hM->GetXaxis()->SetTitle("M_{#gamma#gamma} (GeV)");
@@ -251,7 +254,7 @@ int main(int argc, char *argv[]){
     fmb->Draw("same");
     fpeak->Draw("same");
 
-    hM->Write(Form("/hM1_%d",k),TObject::kOverwrite);
+    hM->Write(Form("hM1_%d",k),TObject::kOverwrite);
     //////////////////////////////
     c->SaveAs(Form("%s/hM1_%d.gif",picdir,k));
     c->SaveAs(Form("%s/hM1_%d.C",picdir,k));

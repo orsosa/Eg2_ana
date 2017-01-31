@@ -3,20 +3,24 @@
 #PBS -l walltime=30:00:00
 #PBS -o /dev/null
 #PBS -e /dev/null
+#PBS -q utfsm
+
 sim=""
 if [ $# -eq 1 ]; then
     sim=1
 fi
 
-
 ##PBS_ARRAYID=3
 ##TMPDIR=.
-tt="Fe-thickD2"
+tt="C-thickD2"
+#tt="Fe-thickD2"
+#tt="Pb-thinD2"
 runlist="/user/o/orsosa/osoto_ana/${tt}rn.txt"
 #runlist="/user/o/orsosa/FeThickD2_miss_rn.txt"
-outdir="/data/atlas/users/orsosa/eg2_data_pruned/$tt"
+#outdir="/data/atlas/users/orsosa/eg2_data_pruned/$tt"
+outdir="/data/atlas/users/orsosa/eg2_data_pruned/${tt}_e+e-"
 if [ ! -z "$sim" ]; then
-    outdir="/data/atlas/users/orsosa/eg2_sim_pruned/C"
+    outdir="/data/atlas/users/orsosa/eg2_sim_pruned/C_xyz"
 fi
 cd $TMPDIR
 mkdir local
@@ -30,6 +34,7 @@ if [ -z "$sim" ]; then
     /user/o/orsosa/osoto_ana/get_simple_tuple
     cp local/prune_data_test.root $outdir"/pruned_"$rn".root"
 else
+#    indir=/data/atlas/users/orsosa/simulation/C_D5e6_$PBS_ARRAYID/ClasTool/
     indir=/data/atlas/users/orsosa/simulation/Fe5e6_$PBS_ARRAYID/ClasTool/
     find $indir -name "*.root" -print >simulFiles.txt
     /user/o/orsosa/osoto_ana/get_simple_tuple 1

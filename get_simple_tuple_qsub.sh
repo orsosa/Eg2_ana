@@ -17,8 +17,8 @@ tt="C-thickD2"
 #tt="Pb-thinD2"
 runlist="/user/o/orsosa/osoto_ana/${tt}rn.txt"
 #runlist="/user/o/orsosa/FeThickD2_miss_rn.txt"
-#outdir="/data/atlas/users/orsosa/eg2_data_pruned/$tt"
-outdir="/data/atlas/users/orsosa/eg2_data_pruned/${tt}_e+e-"
+outdir="/data/atlas/users/orsosa/eg2_data_pruned/${tt}_new"
+#outdir="/data/atlas/users/orsosa/eg2_data_pruned/${tt}_e+e-"
 if [ ! -z "$sim" ]; then
     outdir="/data/atlas/users/orsosa/eg2_sim_pruned/C_xyz"
 fi

@@ -587,7 +587,7 @@ public:
       Ep=E;
       if (!GSIM)
       {
-	Ep = (pid==22)? (E/0.272):sqrt(P*P+ TMath::Power(TDatabasePDG::Instance()->GetParticle("pi-")->Mass(),2));
+	Ep = (pid==22)? (E/0.272):((pid==11 || pid==-11)?P:(sqrt(P*P+ TMath::Power(TDatabasePDG::Instance()->GetParticle("pi-")->Mass(),2))));
       }
       if (evnt==evnt_prev)
       {
@@ -598,7 +598,7 @@ public:
       }
       else
       {
-	fill_elec();
+	//	fill_elec();
 	pop_bkgnd();
 	if (checkMinPart())
 	{
@@ -751,7 +751,7 @@ int main(int argc, char *argv[]){
   //  t->Add("/data/atlas/users/orsosa/eg2_sim_pruned/C_D/pruned*.root/ntuple_accept"); //C D sim rec
   //  t->Add("/data/atlas/users/orsosa/eg2_sim_pruned/C_D/pruned*.root/ntuple_thrown"); //C D sim rec
 
-    t->Add("/data/atlas/users/orsosa/eg2_data_pruned/C-thickD2/pruned*.root/ntuple_data"); //data C and D
+    t->Add("/data/atlas/users/orsosa/eg2_data_pruned/C-thickD2_e+e-/pruned*.root/ntuple_data"); //data C and D
   //t->Add("/data/atlas/users/orsosa/eg2_data_pruned/Pb-thinD2/pruned*.root/ntuple_data"); //data Pb and D
   //t->Add("/data/atlas/users/orsosa/eg2_data_pruned/Fe-thickD2/pruned*.root/ntuple_data"); //data Fe and D
 
@@ -853,11 +853,21 @@ int main(int argc, char *argv[]){
   */
 
     
+  // pi0 -> e- e+ a
+  Reaction r("pi0 -> e- e+ a","pi0_CD_e-e+a.root",true);
+  r.addPrimary("pi0");
+  r.addSecondary("e-");
+  r.addSecondary("e+");  
+  r.addSecondary("gamma");
+
+  /*
   // pi0 -> a a
-  Reaction r("pi0 -> a a","pi0_CD.root");
+    Reaction r("pi0 -> a a","pi0_CD.root");
   r.addPrimary("pi0");
   r.addSecondary("gamma");
   r.addSecondary("gamma");
+  */
+
 
   /*
   // K0 -> pi+ pi-

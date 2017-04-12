@@ -1,10 +1,17 @@
 {
-  TString acc="";
-  gROOT->ProcessLine(Form(".x Ratio%sC/hMRatio1d_Z_Q2_Nu_Z.C",acc.Data()));
+  TString acc="Z_Pt2Q2Nu";
+  TString indir="ZQ2NuPt2_fullrange";
+  TString Obs="Z";
+  TString binschema="Pt2_Q2_Nu_Z";
+  TString TayaSuffix="noRC";
+  TString OsotoSuffix = "noRC";
+  TString Taya=Form("Taya_dataR_%s%s.txt",Obs.Data(),TayaSuffix.Data());
+
+  gROOT->ProcessLine(Form(".x %s/Ratio%sC/hMRatio1d_%s_%s.C",indir.Data(),acc.Data(),Obs.Data(),binschema.Data()));
   TH1F *hC= ( TH1F *)hMRatioProj->Clone("hC");
-  gROOT->ProcessLine(Form(".x Ratio%sFe/hMRatio1d_Z_Q2_Nu_Z.C",acc.Data()));
+  gROOT->ProcessLine(Form(".x %s/Ratio%sFe/hMRatio1d_%s_%s.C",indir.Data(),acc.Data(),Obs.Data(),binschema.Data()));
   TH1F *hFe= ( TH1F *)hMRatioProj->Clone("hFe");
-  gROOT->ProcessLine(Form(".x Ratio%sPb/hMRatio1d_Z_Q2_Nu_Z.C",acc.Data()));
+  gROOT->ProcessLine(Form(".x %s/Ratio%sPb/hMRatio1d_%s_%s.C",indir.Data(),acc.Data(),Obs.Data(),binschema.Data()));
   TH1F *hPb= ( TH1F *)hMRatioProj->Clone("hPb");
   hC->SetMarkerStyle(kFullTriangleUp);
   hC->SetMarkerColor(kRed);
@@ -15,13 +22,17 @@
   hPb->SetMarkerStyle(kFullTriangleUp);
   hPb->SetMarkerColor(kBlack);
   hPb->SetLineColor(kBlack);
-
+  
   TCanvas *cn = new TCanvas("cn","cn",1200,900);
   cn->SetGrid();
-  TH1F *hf = c->DrawFrame(0.3,0.4,0.8,1.0,"Multiplicity Ratio");
-  hf->GetXaxis()->SetTitle("Z");
-  hf->GetYaxis()->SetTitle("R_{#pi_{0}} no Radiative correction");
-  
+  Float_t lx=hC->GetBinLowEdge(1),
+  hx=hC->GetBinLowEdge(hC->GetNbinsX())+hC->GetBinWidth(hC->GetNbinsX()),
+    ly=0.0,hy=1.1;
+  TH1F *hf = c->DrawFrame(lx,ly,hx,hy,"Multiplicity Ratio");
+  hf->GetXaxis()->SetTitle(Obs.Data());
+  hf->GetYaxis()->SetTitle("R_{#pi_{0}}");
+
+ 
   hC->Draw("samepe");
   hFe->Draw("samepe");
   hPb->Draw("samepe");
@@ -30,7 +41,7 @@
   TH1F *hFe_Taya=(TH1F*)hFe->Clone("hFe_Taya");
   TH1F *hC_Taya=(TH1F*)hC->Clone("hC_Taya");
   TH1F *hPb_Taya=(TH1F*)hPb->Clone("hPb_Taya");
-  ifstream fin("Taya_dataR_Z.txt");
+  ifstream fin(Taya.Data());
   char aux[100];
   fin.getline(aux,100);
   Float_t bin,RC,RC_e,RFe,RFe_e,RPb,RPb_e;
@@ -47,26 +58,26 @@
     hPb_Taya->SetBinError(bin+1,RPb_e);
   }
   fin.close();
-  hC_Taya->SetMarkerStyle(kFullTriangleDown);
-  hFe_Taya->SetMarkerStyle(kFullTriangleDown);
-  hPb_Taya->SetMarkerStyle(kFullTriangleDown);
+  hC_Taya->SetMarkerStyle(kFullCircle);
+  hFe_Taya->SetMarkerStyle(kFullCircle);
+  hPb_Taya->SetMarkerStyle(kFullCircle);
 
   hC_Taya->Draw("samepe");
   hFe_Taya->Draw("samepe");
   hPb_Taya->Draw("samepe");
 
 
-  TLegend *l = new TLegend(0.76,0.73,0.9,0.9);
-  l->AddEntry(hC,"C","lp");
-  l->AddEntry(hFe,"Fe","lp");
-  l->AddEntry(hPb,"Pb","lp");
-  l->AddEntry(hC_Taya,"C-Taya","lp");
-  l->AddEntry(hFe_Taya,"Fe-Taya","lp");
-  l->AddEntry(hPb_Taya,"Pb-Taya","lp");
+  TLegend *l = new TLegend(0.1,0.73,0.25,0.9);
+  l->AddEntry(hC,Form("C %s",OsotoSuffix.Data()),"lp");
+  l->AddEntry(hFe,Form("Fe %s",OsotoSuffix.Data()),"lp");
+  l->AddEntry(hPb,Form("Pb %s",OsotoSuffix.Data()),"lp");
+  l->AddEntry(hC_Taya,Form("C-Taya %s",TayaSuffix.Data()),"lp");
+  l->AddEntry(hFe_Taya,Form("Fe-Taya %s",TayaSuffix.Data()),"lp");
+  l->AddEntry(hPb_Taya,Form("Pb-Taya %s",TayaSuffix.Data()),"lp");
 
   l->Draw();
-  cn->SaveAs(Form("Ratio%s.gif",acc.Data()));
-  cn->SaveAs(Form("Ratio%s.C",acc.Data()));
+  cn->SaveAs(Form("%s/Ratio%s%s.gif",indir.Data(),Obs.Data(),acc.Data()));
+  cn->SaveAs(Form("%s/Ratio%s%s.C",indir.Data(),Obs.Data(),acc.Data()));
   
   TH1F *hFe_diff=(TH1F*)hFe->Clone("hFe_Taya");
   TH1F *hC_diff=(TH1F*)hC->Clone("hC_Taya");
@@ -74,16 +85,69 @@
   
   hFe_diff->SetTitle("Differences");
   
-  hC_diff->Add(hC,hC_Taya,1.,-1.);
-  hFe_diff->Add(hFe,hFe_Taya,1.,-1.);
-  hPb_diff->Add(hPb,hFe_Taya,1.,-1.);
+  Float_t miny=500,maxy=-500;
+  for(int i=0;i<hC_diff->GetNbinsX();i++)
+  {
+    Double_t diff = hC->GetBinContent(i+1) - hC_Taya->GetBinContent(i+1);
+    hC_diff->SetBinContent(i+1,diff);
+    if(miny>diff) miny=diff;
+    if(maxy<diff) maxy=diff;
 
+    Double_t diff = hFe->GetBinContent(i+1) - hFe_Taya->GetBinContent(i+1); 
+    hFe_diff->SetBinContent(i+1,diff);
+    if(miny>diff) miny=diff;
+    if(maxy<diff) maxy=diff;
+
+    Double_t diff = hPb->GetBinContent(i+1) - hPb_Taya->GetBinContent(i+1);
+    hPb_diff->SetBinContent(i+1,diff);
+    if(miny>diff) miny=diff;
+    if(maxy<diff) maxy=diff;
+  }
+
+  hC_diff->SetMaximum(maxy + (maxy-miny)*0.05);
+  hC_diff->SetMinimum(miny - (maxy-miny)*0.05);
 
   hC_diff->Draw("p");
   hFe_diff->Draw("samep");
   hPb_diff->Draw("samep");
 
-  cn->SaveAs(Form("Ratio_diff%s.gif",acc.Data()));
-  cn->SaveAs(Form("Ratio_diff%s.C",acc.Data()));
+  cn->SaveAs(Form("%s/Ratio_diff%s.gif",indir.Data(),acc.Data()));
+  cn->SaveAs(Form("%s/Ratio_diff%s.C",indir.Data(),acc.Data()));
+
+  TH1F *hFe_diff_r=(TH1F*)hFe->Clone("hFe_Taya");
+  TH1F *hC_diff_r=(TH1F*)hC->Clone("hC_Taya");
+  TH1F *hPb_diff_r=(TH1F*)hPb->Clone("hPb_Taya");
+  
+  hFe_diff_r->SetTitle("Differences in % of Taya values.");
+  
+  Float_t miny=500,maxy=-500;
+  for(int i=0;i<hC_diff->GetNbinsX();i++)
+  {
+    Double_t diff = (hC->GetBinContent(i+1) - hC_Taya->GetBinContent(i+1))*100/hC_Taya->GetBinContent(i+1);
+    hC_diff_r->SetBinContent(i+1,diff);
+    if(miny>diff) miny=diff;
+    if(maxy<diff) maxy=diff;
+
+    Double_t diff = (hFe->GetBinContent(i+1) - hFe_Taya->GetBinContent(i+1))*100/hFe_Taya->GetBinContent(i+1); 
+    hFe_diff_r->SetBinContent(i+1,diff);
+    if(miny>diff) miny=diff;
+    if(maxy<diff) maxy=diff;
+
+    Double_t diff = (hPb->GetBinContent(i+1) - hPb_Taya->GetBinContent(i+1))*100/hPb_Taya->GetBinContent(i+1);
+    hPb_diff_r->SetBinContent(i+1,diff);
+    if(miny>diff) miny=diff;
+    if(maxy<diff) maxy=diff;
+  }
+
+  hC_diff_r->SetMaximum(maxy + (maxy-miny)*0.05);
+  hC_diff_r->SetMinimum(miny - (maxy-miny)*0.05);
+
+  hC_diff_r->Draw("p");
+  hFe_diff_r->Draw("samep");
+  hPb_diff_r->Draw("samep");
+
+  cn->SaveAs(Form("%s/Ratio_diff%s_rel.gif",indir.Data(),acc.Data()));
+  cn->SaveAs(Form("%s/Ratio_diff%s_rel.C",indir.Data(),acc.Data()));
+
 
 }

@@ -120,6 +120,7 @@ int main(int argc, char *argv[])
   TCanvas *c  = new TCanvas("c", "The canvas",800,600);
   if (gsim) c->SetLogy();
   TNtuple *t = (TNtuple *) f->Get("outdata");
+  if (gsim) t->SetEstimate(10e6);
   TNtuple *tb = (TNtuple *) f->Get("outbkgnd");
   TNtuple *te = (TNtuple *) f->Get("ElecData");
   //pt1 = new TNtuple("pt1","parameters 1","p0:p1:p2:p3:p4:binq2:binnu:binz");
@@ -289,8 +290,9 @@ int main(int argc, char *argv[])
 
       hM->Fill(M[i]);
       hM_fine->Fill(M[i]);
-      
     }
+
+
     Float_t err;
     Float_t mbratio=get_mbratio(hM,minRange,maxRange,err,2);
 

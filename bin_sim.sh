@@ -1,6 +1,8 @@
 #!/bin/bash
-./get_data_binned -f pi0_gsimC.root -t C -d gsim -g
-./get_data_binned -f pi0_gsimCD.root -t C -d gsim -gl
+outdir="ZQ2NuPt2_fullrange/gsim"
+./get_data_binned -f pi0_gsimC.root -t C -d $outdir -g
+./get_data_binned -f pi0_gsimCD.root -t C -d $outdir -gl
 
-./get_data_binned -f pi0_simC.root -t C -d sim -s
-./get_data_binned -f pi0_simCD.root -t C -d sim -sl
+outdir="ZQ2NuPt2_fullrange/sim"
+./get_data_binned -f pi0_simC.root -t C -d $outdir -s
+./get_data_binned -f pi0_simCD.root -t C -d $outdir -sl

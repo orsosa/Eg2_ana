@@ -28,7 +28,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-TString srLTfile, gsLTfile, srSTfile, gsSTfile, dataLTfile, dataSTfile, dataElecfile, outdir, st, lt, suffix, bin_info;
+TString srLTfile, gsLTfile, srSTfile, gsSTfile, dataLTfile, dataSTfile, dataElecfile, outdir, st, lt, suffix, bin_info, indir;
 Int_t NFold;
 Int_t *NEdges;
 Char_t**  BinName;
@@ -48,13 +48,14 @@ int main(int argc, char *argv[])
   c->SetGrid();
 
   if (outdir.IsNull())  outdir.Append("MRatio");
-  if (srLTfile.IsNull())  srLTfile.Append("sim_CD_D/binned.root");
-  if (gsLTfile.IsNull())  gsLTfile.Append("gsim_CD_Dgsim/binned.root");
-  if (srSTfile.IsNull())  srSTfile.Append("sim_CD_C/binned.root");
-  if (gsSTfile.IsNull())  gsSTfile.Append("gsim_CD_Cgsim/binned.root");
+  if (indir.IsNull())  indir.Append(".");
 
-  if (dataLTfile.IsNull())  dataLTfile.Append(Form("data_%sD_D/binned.root",st.Data()));
-  if (dataSTfile.IsNull())  dataSTfile.Append(Form("data_%sD_%s/binned.root",st.Data(),st.Data()));
+  if (srLTfile.IsNull())  srLTfile.Append(Form("%s/sim_CD_D/binned.root",indir.Data()));
+  if (gsLTfile.IsNull())  gsLTfile.Append(Form("%s/gsim_CD_Dgsim/binned.root",indir.Data()));
+  if (srSTfile.IsNull())  srSTfile.Append(Form("%s/sim_CD_C/binned.root",indir.Data()));
+if (gsSTfile.IsNull())  gsSTfile.Append(Form("%s/gsim_CD_Cgsim/binned.root",indir.Data()));
+  if (dataLTfile.IsNull())  dataLTfile.Append(Form("%s/data_%sD_D/binned.root",indir.Data(),st.Data()));
+  if (dataSTfile.IsNull())  dataSTfile.Append(Form("%s/data_%sD_%s/binned.root",indir.Data(),st.Data(),st.Data()));
 
   if (dataElecfile.IsNull())  dataElecfile.Append( Form("Ne_TargConf.root") );
 
@@ -168,9 +169,10 @@ int main(int argc, char *argv[])
   std::cout<< draw_text<<std::endl;
 
   tde= (TTree *) fdataElec->Get("Nelec");
+
   TString tgs,ss;
   Ssiz_t start=0;
-  char tg[10];
+  char tg[20];
   Double_t NeD,NeA;
   tde->SetBranchAddress("targ_conf",tg);
   tde->SetBranchAddress("NeD",&NeD);
@@ -186,16 +188,21 @@ int main(int argc, char *argv[])
   }
 
 
-  Int_t nbrLT = tr1sLT->Draw(draw_text.Data(),"","goff");
-  Int_t nbgLT = tg1sLT->Draw(draw_text.Data(),"","goff");
 
-  Int_t nbrST = tr1sST->Draw(draw_text.Data(),"","goff");
-  Int_t nbgST = tg1sST->Draw(draw_text.Data(),"","goff");
+  Int_t nbrLT = tr1sLT->Draw(draw_text.Data(),"","goffcandle");
+
+  Int_t nbgLT = tg1sLT->Draw(draw_text.Data(),"","goffcandle");
+
+  Int_t nbrST = tr1sST->Draw(draw_text.Data(),"","goffcandle");
+
+  Int_t nbgST = tg1sST->Draw(draw_text.Data(),"","goffcandle");
+
 
   draw_text.Append(":(mbr_err*mbr_err/mbratio/mbratio)");
-  Int_t nbsdLT = tdsLT->Draw(draw_text.Data(),"","goff");
+  std::cout<< draw_text<<std::endl;
+  Int_t nbsdLT = tdsLT->Draw(draw_text.Data(),"","goffcandle");
 
-  Int_t nbsdST = tdsST->Draw(draw_text.Data(),"","goff");
+  Int_t nbsdST = tdsST->Draw(draw_text.Data(),"","goffcandle");
 
 
   cout<<"nbrLT\tnbgLT\n";
@@ -262,12 +269,13 @@ int main(int argc, char *argv[])
     for (int k = 1; k<=hNhST->GetNbinsX();k++)
     {
       Float_t R = (hNhST->GetBinContent(k)) / (hNhLT->GetBinContent(k));
-
+      
       Float_t MR = R*NeD/NeA;
       //      Float_t MR = R;
       hMRatioProj->SetBinContent(k,MR);
       Float_t err = R*TMath::Sqrt( (hsigUp->GetBinContent(k) / (hNhST->GetBinContent(k)*hNhST->GetBinContent(k) ) + hsigDown->GetBinContent(k) / (hNhLT->GetBinContent(k)*hNhLT->GetBinContent(k))  + 1. / NeA + 1./NeD ) ) ;
       hMRatioProj->SetBinError(k,err);
+
     }
 
     hMRatioProj->SetTitle(Form("Multiplicity Ratio (%s)",BinName[binorder.back()]));
@@ -367,13 +375,15 @@ inline int parse_opt(int argc, char* argv[])
   int c;
   if(argc==1)
     print_help();
-  while ((c = getopt (argc, argv, "ar:g:hd:lt:o:n")) != -1)
+  while ((c = getopt (argc, argv, "ar:g:hd:lt:o:ni:")) != -1)
     switch (c)
       {
       case 'a':
         acc_flag = true;
         break;
-
+      case 'i':
+        indir.Append(optarg);
+        break;
       case 'r':
         srLTfile.Append(optarg);
         break;

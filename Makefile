@@ -20,7 +20,7 @@ LIBS := $(ROOTGLIBS) \
                -L$(CLASTOOL)/slib/${OS_NAME} -lClasTool -lClasBanks -lVirtualReader -lDSTReader -lMathMore -lMatrix\
                -L/user/o/${LOGNAME}/Analyser/slib/ -lTIdentificator -lSpectrum -lEG
 
-FILES := get_simple_tuple pi0_eta_id pi0_eta_id_acc pi0_eta_id_acc_sim mb_sub get_mb_binned get_recsim_binned get_mb_binned_gsim get_recsim_binned_gsim get_gamma_binned get_onlygamma_binned eta_id get_recsim_binned_mod get_data_binned get_acceptance get_MRatio get_Nelectrons
+FILES := get_simple_tuple pi0_eta_id pi0_eta_id_acc pi0_eta_id_acc_sim mb_sub get_mb_binned get_recsim_binned get_mb_binned_gsim get_recsim_binned_gsim get_gamma_binned get_onlygamma_binned eta_id get_recsim_binned_mod get_data_binned get_acceptance get_MRatio get_Nelectrons get_Ne get_Ne_local show_bin_elec
 
 
 .PHONY: all clean

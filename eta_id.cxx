@@ -21,26 +21,29 @@
 #include <algorithm>
 #include <map>
 #include <string.h>
+#include "do_pid.h"
 
 TH1F *hW;
 TH1F *hW2;
 TH1F *hWmb;
 TH1F *hW2mb;
 TH1F *hT;
+TH1F *hcfm;
 TH2F *hEpi0_th;
 Float_t kMPi0=1.33196e-1;//Got from sim.
 Float_t kSPi0=1.94034e-2;//Got from sim.
 //Float_t kMPi0=5.39609e-01;
 //Float_t kSPi0=5.98542e-02;
 bool GSIM=false;
+int data_type=0;
 Float_t kPt2,kEvent; 
 TNtuple *tuple;
 //TNtuple *tuple_sim;
 TNtuple *tuplemb;
 TNtuple *tuplePi0_gamma, *tupleGamma;
 Float_t kEbeam=5.014,E,Ee,Ee_prev,Ep,P,Px,Py,Pz,evnt,evnt_prev,Zec,Zec_prev,Yec,Yec_prev,Xec,Xec_prev,TEc,Q2,Q2_prev,W,W_prev,Nu,Nu_prev,Pex,Pex_prev,Pey,Pey_prev,Pez,Pez_prev,pid,vx,vy,vz;
-Long_t Ne;
-char st[3]= "C"; // solid target: D C Fe Pb
+long Ne = -1;
+char st[3]= "C"; // solid target: C Fe Pb
 char tt[3] = "C"; // cut on solid target or Deuterium : (st) or D.
 Float_t zBin[6]={0.3, 0.4, 0.5, 0.6, 0.7, 0.8};
 Float_t Q2Bin[4]={1.0, 1.33, 1.77, 4.1};
@@ -269,7 +272,7 @@ public:
     kNSecondary=0;
     kOutFile = new TFile(filename,"recreate");
     //kOutData=new TNtuple("outdata",Form("%s",name),"M:Phx:Phy:Phz:Nu:Q2:Z:Cospq:Pt2:Event:M2_01:M2_02:M_c:Phx_c:Phy_c:Phz_c:Z_c:Cospq_c:Pt2_c:Chi2:qx1:qy1:qz1:qx2:qy2:qz2");
-    kOutData = new TNtuple("outdata",Form("%s",name),"M:Phx:Phy:Phz:Nu:Q2:Z:Cospq:Pt2:Event:M2_01:M2_02:vzec:z1:z2:z3:W:vxec:vyec");
+    kOutData = new TNtuple("outdata",Form("%s",name),"M:Phx:Phy:Phz:Nu:Q2:Z:Cospq:Pt2:Event:M2_01:M2_02:vzec:z1:z2:z3:W:vxec:vyec:qx1:qy1:qz1:qx2:qy2:qz2:E1:E2:E1c:E2c:x1:y1:x2:y2");
     kElecData = new TNtuple("ElecData",Form("%s",name),"Nu:Q2:Event:vzec:Ee:Pex:Pey:Pez:W");
     kOutBkgnd = (TNtuple *)kOutData->Clone("outbkgnd"); 
     kData = new Float_t[kOutData->GetNvar()];
@@ -325,14 +328,42 @@ public:
 
     kData[10]=((comb->Npart==3)? ( *(*comb)[0] + *(*comb)[1]).M2() : 0);
     kData[11]=((comb->Npart==3)? ( *(*comb)[0] + *(*comb)[2]).M2() : 0);
-    kData[12] = Zec_prev;
+    kData[12] = Zec_prev; // z electron corrected.
 
-    kData[13] = ((comb->Npart==3)?(*comb)[0]->vz:0);
-    kData[14] = ((comb->Npart==3)?(*comb)[1]->vz:0);
-    kData[15] = ((comb->Npart==3)?(*comb)[2]->vz:0);
+    kData[13] = (*comb)[0]->vz;
+    kData[14] = ((comb->Npart>1)?(*comb)[1]->vz:0);
+    kData[15] = ((comb->Npart>2)?(*comb)[2]->vz:0);
     kData[16] = W_prev;
     kData[17] = Xec_prev;
     kData[18] = Yec_prev;
+
+    Double_t qx1,qy1,qz1,qx2,qy2,qz2;
+    qx1=(*comb)[0]->Px();
+    qy1=(*comb)[0]->Py();
+    qz1=(*comb)[0]->Pz();
+    qx2=((comb->Npart>1)?(*comb)[1]->Px():0);
+    qy2=((comb->Npart>1)?(*comb)[1]->Py():0);
+    qz2=((comb->Npart>1)?(*comb)[1]->Pz():0);
+    Float_t E1=(*comb)[0]->E(); 
+    Float_t E2=((comb->Npart>1)?(*comb)[1]->E():0); 
+    kData[19] = qx1;
+    kData[20] = qy1;
+    kData[21] = qz1;
+    kData[22] = qx2;
+    kData[23] = qy2;
+    kData[24] = qz2;
+    kData[25] = E1;
+    kData[26] = E2;
+    kData[27] = E1;
+    kData[28] = E2;
+    if (0.35<E1&&E1<1.2) kData[27] /= hcfm->GetBinContent(hcfm->FindBin(E1));
+    if (0.35<E2&&E2<1.2) kData[28] /= hcfm->GetBinContent(hcfm->FindBin(E2));
+    kData[29] =(*comb)[0]->vx;
+    kData[30] =(*comb)[0]->vy;
+    kData[29] =((comb->Npart>1)?(*comb)[1]->vx:0);
+    kData[30] =((comb->Npart>1)?(*comb)[1]->vy:0);
+
+
     /*  
     Double_t *W = new Double_t[4];
     Double_t *Wa = new Double_t[4];
@@ -387,7 +418,6 @@ public:
     kData[24] = qy2;
     kData[25] = qz2;
 */
-
     return tuple->Fill(kData);
   }
   //////////////////////////
@@ -585,9 +615,9 @@ public:
     {
       t->GetEntry(i);
       Ep=E;
-      if (!GSIM)
+      if (data_type<2)// not gsim
       {
-	Ep = (pid==22)? (E/0.272):((pid==11 || pid==-11)?P:(sqrt(P*P+ TMath::Power(TDatabasePDG::Instance()->GetParticle("pi-")->Mass(),2))));
+	Ep = (pid==22)? (E/0.272):((pid==211 || pid==-211)?P:(sqrt(P*P+ TMath::Power(TDatabasePDG::Instance()->GetParticle("pi-")->Mass(),2))));
       }
       if (evnt==evnt_prev)
       {
@@ -739,19 +769,29 @@ void check_dir(const char *outdir)
   
 }
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
   TBenchmark *bm = new TBenchmark();
   bm->Start("get_eta");
+  parseopt(argc,argv);
+  TFile * corrfile = new TFile("gammECorr.root","read");
+  hcfm = (TH1F*)corrfile->Get("hcfm");
   //char outdir[50];
   //strcpy(outdir,Form("test_eta_%sD_%s",st,tt));
+
   TChain *t = new TChain();
+  if (data_type==1) t->Add("data.root/ntuple_accept");
+  else if (data_type==2) t->Add("data.root/ntuple_thrown");
+  else 
+    t->Add("data.root/ntuple_data");
+  
   //  t->Add("/user/o/orsosa/osoto_ana/local/prune_simul.root/ntuple_accept"); //simrec test
-  //  t->Add("/data/atlas/users/orsosa/eg2_sim_pruned/C/pruned_simul_*.root/ntuple_accept"); //C  sim rec 
+  //t->Add("/data/atlas/users/orsosa/eg2_sim_pruned/C/pruned_simul_*.root/ntuple_accept"); //C  sim rec 
   //  t->Add("/data/atlas/users/orsosa/eg2_sim_pruned/C/pruned_simul_*.root/ntuple_thrown"); //C sim gsim 
   //  t->Add("/data/atlas/users/orsosa/eg2_sim_pruned/C_D/pruned*.root/ntuple_accept"); //C D sim rec
   //  t->Add("/data/atlas/users/orsosa/eg2_sim_pruned/C_D/pruned*.root/ntuple_thrown"); //C D sim rec
 
-    t->Add("/data/atlas/users/orsosa/eg2_data_pruned/C-thickD2_e+e-/pruned*.root/ntuple_data"); //data C and D
+  //  t->Add("/data/atlas/users/orsosa/eg2_data_pruned/C-thickD2/pruned*.root/ntuple_data"); //data C and D
   //t->Add("/data/atlas/users/orsosa/eg2_data_pruned/Pb-thinD2/pruned*.root/ntuple_data"); //data Pb and D
   //t->Add("/data/atlas/users/orsosa/eg2_data_pruned/Fe-thickD2/pruned*.root/ntuple_data"); //data Fe and D
 
@@ -807,8 +847,7 @@ int main(int argc, char *argv[]){
 
   //  t->SetMaxEntryLoop(1e4);
   //  t->SetAlias("Eh",Form("(pid==22)*E/0.272 + (pid!=22)*(TMath::Sqrt(P**2 + %f**2)",TDatabasePDG::Instance()->GetParticle("pi-")->Mass() ));
-  if (argc ==2) Ne = atoi(argv[1]);
-  else Ne = t->GetEntries();
+  if (Ne==-1)  Ne = t->GetEntries();
   std::cout<<"Number of entries to be processed: "<<Ne<<std::endl;
 
   
@@ -852,30 +891,46 @@ int main(int argc, char *argv[]){
   r.addSecondary("gamma");
   */
 
-    
+  /*  
   // pi0 -> e- e+ a
   Reaction r("pi0 -> e- e+ a","pi0_CD_e-e+a.root",true);
   r.addPrimary("pi0");
   r.addSecondary("e-");
   r.addSecondary("e+");  
   r.addSecondary("gamma");
+  */
+  /*  
 
-  /*
   // pi0 -> a a
-    Reaction r("pi0 -> a a","pi0_CD.root");
+  Reaction r("pi0 -> a a","pi0_CD_2aonly_c.root");
   r.addPrimary("pi0");
   r.addSecondary("gamma");
   r.addSecondary("gamma");
   */
 
-
+  /*
+  // pi0 -> a a
+  Reaction r("pi0 -> a a","pi0out.root");
+  r.addPrimary("pi0");
+  r.addSecondary("gamma");
+  r.addSecondary("gamma");
+  */
   /*
   // K0 -> pi+ pi-
-  Reaction r("K0 -> pi+ pi-","test_pippimOnlyFe.root",true);
+  Reaction r("K0 -> pi+ pi-","k0out.root");
   r.addPrimary("K0");
   r.addSecondary("pi+");
   r.addSecondary("pi-");
-  */
+*/
+
+  // w -> pi+ pi- a a
+  Reaction r("w -> pi+ pi- a a","wout.root");
+  r.addPrimary("omega");
+  r.addSecondary("gamma");
+  r.addSecondary("gamma");
+  r.addSecondary("pi+");
+  r.addSecondary("pi-");
+    
 
   /*  
   Reaction r("eta -> pi+ pi- a a","test_pippimaaOnlyFe.root",true);
@@ -890,6 +945,7 @@ int main(int argc, char *argv[]){
   r.store();
   std::cout<<"\n";
   r.kOutData->Print();
+  corrfile->Close();
   bm->Show("get_pi0");
   return 0;  
 

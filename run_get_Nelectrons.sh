@@ -1,8 +1,8 @@
 #!/bin/bash
 #PBS -m n # no email
 #PBS -l walltime=30:00:00 # maximum time on wall
-##PBS -o /dev/null # no stdout
-##PBS -e /dev/null # no stderr
+#PBS -o /dev/null # no stdout
+#PBS -e /dev/null # no stderr
 #PBS -q atlas # use utfsm queue
 
 sim=""
@@ -12,15 +12,15 @@ fi
 
 #PBS_ARRAYID=153
 #TMPDIR=.
-tt="C-thickD2"
+#tt="C-thickD2"
 #tt="Fe-thickD2"
-#tt="Pb-thinD2"
+tt="Pb-thinD2"
 runlist="/user/o/orsosa/osoto_ana/${tt}rn.txt"
 #runlist="/user/o/orsosa/FeThickD2_miss_rn.txt"
-outdir="/data/tsunami/jlab/orsosa/eg2_data_electrons/${tt}"
+outdir="/data/user/o/orsosa/eg2_data_electrons/${tt}"
 #outdir="/data/atlas/users/orsosa/eg2_data_pruned/${tt}_e+e-"
 if [ ! -z "$sim" ]; then
-    outdir="/data/tsunami/jlab/orsosa/eg2_sim_electrons"
+    outdir="/data/user/o/orsosa/eg2_sim_electrons"
 fi
 cd $TMPDIR
 cp /user/o/orsosa/osoto_ana/get_Nelectrons .
@@ -28,7 +28,8 @@ cp /user/o/orsosa/osoto_ana/get_Nelectrons .
 if [ -z "$sim" ]; then
     
     rn=`sed -n "$PBS_ARRAYID{p;q}" $runlist`
-    find /data/tsunami/jlab/mss/clas/eg2a/production/Pass2/Clas/ -name "*$rn*.root" -exec cp {} . \;
+
+    find /data/user/jlab/mss/clas/eg2a/production/Pass2/Clas/ -name "*$rn*.root" -exec cp {} . \;
     #indir=/data/atlas/users/orsosa/eg2_data_ct/$tt/$rn/
 #    echo $indir
     find . -name "clas*.root" -print > dataFiles.txt

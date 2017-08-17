@@ -18,6 +18,11 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 
+//////// PARAMETER TO CONTROL SIM SOURCE ////
+bool osoto_sim=false; // false -> hayk sim
+///////////////////////////////////////////
+
+
 Int_t NFold;
 Int_t *NEdges;
 Char_t **BinName;
@@ -41,6 +46,7 @@ Float_t get_Ne_by_target(TString st = "C-thickD2",struct data *tc=0)
 
   TCut DIS ="Q2>1.&&W>2.&&Nu/5.014<0.85";
   TCut D2 = "-31.8<vzec&&vzec<-28.40";
+  if (!osoto_sim) D2="TargType==1";
   TString ss;
   Ssiz_t start =0;
   st.Tokenize(ss,start,(const char*)"-");
@@ -56,12 +62,30 @@ Float_t get_Ne_by_target(TString st = "C-thickD2",struct data *tc=0)
   Double_t n_C=0.1723/70;//~ number of atoms thickness/atomic_radii
   Double_t n_Fe=0.4/140;
   Double_t n_Pb=0.014/180;
+  /////////////// OSOTO vertex cut /////////////
+  
+
   if (!ss.CompareTo("Fe"))  {ST="-25.65<vzec&&vzec<-24.26";ci=kBlack;Norm=0.31/0.32;hAccST=hAccSTFe;}
   else if (!ss.CompareTo("C")){ ST="-25.33<vzec&&vzec<-24.10";ci=kBlue;Norm=.30/.32;hAccST=hAccSTC;}
   else if (!ss.CompareTo("Pb")){ ST= "-25.54<vzec&&vzec<-24.36";ci=kRed;Norm = .16/.32;hAccST=hAccSTPb;}
   else ST="1==0";
+  ////////////////
+  
+  if (!osoto_sim) ST="TargType==2";
+  ////// ~hayk vertex cut //////////
+  /*if (!ss.CompareTo("Fe"))  {ST="-25.65<vzec&&vzec<-20";ci=kBlack;Norm=0.31/0.32;hAccST=hAccSTFe;}
+  else if (!ss.CompareTo("C")){ ST="-25.33<vzec&&vzec<-20";ci=kBlue;Norm=.30/.32;hAccST=hAccSTC;}
+  else if (!ss.CompareTo("Pb")){ ST= "-25.54<vzec&&vzec<-20";ci=kRed;Norm = .16/.32;hAccST=hAccSTPb;}
+  else ST="1==0";
+  */
+  ////////////////
 
-  TFile *data = new TFile(Form("/data/tsunami/jlab/orsosa/eg2_data_electrons/Nelec%sD.root",ss.Data()));  
+
+
+  ///// only carbon sim for osoto_sim
+  if (osoto_sim) hAccST=hAccSTC;
+
+  TFile *data = new TFile(Form("/data/user/o/orsosa/eg2_data_electrons/Nelec%sD.root",ss.Data()));  
   TNtuple* td = (TNtuple*)data->Get("NElectrons");
   td->SetAlias("Xb",Xb_def.Data());
   ofile->cd();
@@ -155,11 +179,12 @@ int main(int argc, char *argv[])
 {
   TBenchmark *bm = new TBenchmark();
   bm->Start("electron_count");
-  
+  if (osoto_sim) std::cout<<"using osoto sim"<<std::endl;
+  else  std::cout<<"using hayk sim"<<std::endl;
   if (argc==2) get_bin_info(argv[1]);
   else get_bin_info();
 
-  ofile = new TFile("Ne_TargConf_Q2Xb_HS.root","recreate");
+  ofile = new TFile("Ne_TargConf_Q2Xb_HS_Hcut.root","recreate");
   draw_text=Form("%s:%s",BinName[1],BinName[0]);
   std::cout<<draw_text<<std::endl;
   hstack=new THStack("emc","EMC not corrected");
@@ -185,61 +210,91 @@ int main(int argc, char *argv[])
   hAccSTPb =(TH2F*)hAccSTC ->Clone("hAccPb");
   hAccLT =(TH2F*)hAccSTC ->Clone("hAccLT");
 
-  //  TFile *fsimST = new TFile("/data/tsunami/jlab/orsosa/eg2_sim_electrons/Electrons_dis_CC.root");
-  TFile *fsimST = new TFile("/lustre/user/orsosa/sim_Hayk/C_elec.root");
+  TFile *fsimST;
+  TFile *fsimLT;
+  TNtuple *trec;
+  TNtuple *tsim;
+
+  if (osoto_sim)
+  {
+    fsimST = new TFile("/data/user/o/orsosa/eg2_sim_electrons/Electrons_dis_CC.root");
+    trec = (TNtuple *)fsimST->Get("NElectrons");
+    tsim = (TNtuple *)fsimST->Get("e_thrown");
+    ofile->Add(trec);
+    ofile->Add(tsim);
+    ofile->cd();
+    
+    trec->SetAlias("Xb",Xb_def.Data());
+    tsim->SetAlias("Xb",Xb_def.Data());
+    trec->Draw( Form( "%s>>%s",draw_text.Data(),hNelecRecSTC->GetName() ) ,"","goff");
+    tsim->Draw( Form( "%s>>%s",draw_text.Data(),hNelecSimSTC->GetName() ) ,"", "goff");
+    
+    delete trec;
+    delete tsim;
+    fsimST->Close();
+  }
+
+  else //hayk sim 
+  {
+    fsimST = new TFile("/data/user/o/orsosa/sim_Hayk/C_elec.root");
   
-  TNtuple *trec = (TNtuple *)fsimST->Get("NElectrons");
-  TNtuple *tsim = (TNtuple *)fsimST->Get("e_thrown");
-  ofile->Add(trec);
-  ofile->Add(tsim);
-  ofile->cd();
-
-  trec->SetAlias("Xb",Xb_def.Data());
-  tsim->SetAlias("Xb",Xb_def.Data());
-  trec->Draw( Form( "%s>>%s",draw_text.Data(),hNelecRecSTC->GetName() ) ,"","goff");
-  tsim->Draw( Form( "%s>>%s",draw_text.Data(),hNelecSimSTC->GetName() ) ,"", "goff");
-
-  delete trec;
-  delete tsim;
-  fsimST->Close();
-
-  fsimST = new TFile("/lustre/user/orsosa/sim_Hayk/Fe_elec.root");
-  
-  trec = (TNtuple *)fsimST->Get("NElectrons");
-  tsim = (TNtuple *)fsimST->Get("e_thrown");
-  ofile->Add(trec);
-  ofile->Add(tsim);
-  ofile->cd();
-
-  trec->SetAlias("Xb",Xb_def.Data());
-  tsim->SetAlias("Xb",Xb_def.Data());
-  trec->Draw( Form( "%s>>%s",draw_text.Data(),hNelecRecSTFe->GetName() ) ,"","goff");
-  tsim->Draw( Form( "%s>>%s",draw_text.Data(),hNelecSimSTFe->GetName() ) ,"", "goff");
-
-  delete trec;
-  delete tsim;
-  fsimST->Close();
-
-  fsimST = new TFile("/lustre/user/orsosa/sim_Hayk/Pb_elec.root");
-  
-  trec = (TNtuple *)fsimST->Get("NElectrons");
-  tsim = (TNtuple *)fsimST->Get("e_thrown");
-  ofile->Add(trec);
-  ofile->Add(tsim);
-  ofile->cd();
-
-  trec->SetAlias("Xb",Xb_def.Data());
-  tsim->SetAlias("Xb",Xb_def.Data());
-  trec->Draw( Form( "%s>>%s",draw_text.Data(),hNelecRecSTPb->GetName() ) ,"","goff");
-  tsim->Draw( Form( "%s>>%s",draw_text.Data(),hNelecSimSTPb->GetName() ) ,"", "goff");
-
-  delete trec;
-  delete tsim;
-  fsimST->Close();
-
-
-  TFile *fsimLT = new TFile("/data/tsunami/jlab/orsosa/eg2_sim_electrons/Electrons_dis_CD.root");
-  
+    trec = (TNtuple *)fsimST->Get("NElectrons");
+    tsim = (TNtuple *)fsimST->Get("e_thrown");
+    ofile->Add(trec);
+    ofile->Add(tsim);
+    ofile->cd();
+    
+    trec->SetAlias("Xb",Xb_def.Data());
+    tsim->SetAlias("Xb",Xb_def.Data());
+    trec->Draw( Form( "%s>>%s",draw_text.Data(),hNelecRecSTC->GetName() ) ,"","goff");
+    tsim->Draw( Form( "%s>>%s",draw_text.Data(),hNelecSimSTC->GetName() ) ,"", "goff");
+    
+    delete trec;
+    delete tsim;
+    fsimST->Close();
+    
+    fsimST = new TFile("/data/user/o/orsosa/sim_Hayk/Fe_elec.root");
+    
+    trec = (TNtuple *)fsimST->Get("NElectrons");
+    tsim = (TNtuple *)fsimST->Get("e_thrown");
+    ofile->Add(trec);
+    ofile->Add(tsim);
+    ofile->cd();
+    
+    trec->SetAlias("Xb",Xb_def.Data());
+    tsim->SetAlias("Xb",Xb_def.Data());
+    trec->Draw( Form( "%s>>%s",draw_text.Data(),hNelecRecSTFe->GetName() ) ,"","goff");
+    tsim->Draw( Form( "%s>>%s",draw_text.Data(),hNelecSimSTFe->GetName() ) ,"", "goff");
+    
+    delete trec;
+    delete tsim;
+    fsimST->Close();
+    
+    fsimST = new TFile("/data/user/o/orsosa/sim_Hayk/Pb_elec.root");
+    
+    trec = (TNtuple *)fsimST->Get("NElectrons");
+    tsim = (TNtuple *)fsimST->Get("e_thrown");
+    ofile->Add(trec);
+    ofile->Add(tsim);
+    ofile->cd();
+    
+    trec->SetAlias("Xb",Xb_def.Data());
+    tsim->SetAlias("Xb",Xb_def.Data());
+    trec->Draw( Form( "%s>>%s",draw_text.Data(),hNelecRecSTPb->GetName() ) ,"","goff");
+    tsim->Draw( Form( "%s>>%s",draw_text.Data(),hNelecSimSTPb->GetName() ) ,"", "goff");
+    
+    delete trec;
+    delete tsim;
+    fsimST->Close();
+  }
+  if (osoto_sim)
+  {
+    fsimLT = new TFile("/data/user/o/orsosa/eg2_sim_electrons/Electrons_dis_CD.root");
+  }
+  else // hayk sim
+  {
+    fsimLT = new TFile("/data/user/o/orsosa/sim_Hayk/D2_elec.root");
+  }
   trec = (TNtuple *)fsimLT->Get("NElectrons");
   tsim = (TNtuple *)fsimLT->Get("e_thrown");
 
@@ -267,15 +322,19 @@ int main(int argc, char *argv[])
   hNelecSimLT->Sumw2();
 
   hAccSTC->Divide(hNelecRecSTC,hNelecSimSTC,1.,1.,"B");
-  hAccSTFe->Divide(hNelecRecSTFe,hNelecSimSTFe,1.,1.,"B");
-  hAccSTPb->Divide(hNelecRecSTPb,hNelecSimSTPb,1.,1.,"B");
-
+  if (! osoto_sim)
+  {
+    hAccSTFe->Divide(hNelecRecSTFe,hNelecSimSTFe,1.,1.,"B");
+    hAccSTPb->Divide(hNelecRecSTPb,hNelecSimSTPb,1.,1.,"B");
+  }
   hAccLT->Divide(hNelecRecLT,hNelecSimLT,1.,1.,"B");
   ofile->cd();
   hAccSTC->Write("",TObject::kOverwrite);
-  hAccSTFe->Write("",TObject::kOverwrite);
-  hAccSTPb->Write("",TObject::kOverwrite);
-
+  if (! osoto_sim)
+  {
+    hAccSTFe->Write("",TObject::kOverwrite);
+    hAccSTPb->Write("",TObject::kOverwrite);
+  }
   hAccLT->Write("",TObject::kOverwrite);
 
   get_Ne_by_target("C-thickD2");

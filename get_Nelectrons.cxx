@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
   int rn;
   char File[300];
   //  TString indir=Form("/data/atlas/users/orsosa/eg2_data_ct/%s",tt_full.Data());
-  TString indir=Form("/data/tsunami/jlab/mss/clas/eg2a/production/Pass2/Clas");
+  TString indir=Form("/data/user/jlab/mss/clas/eg2a/production/Pass2/Clas");
   //  clas_41976_07.pass2.root
 
   if (RN!=0)    system(Form("find %s/ -name \"*%d*.root\" -print > dataFiles.txt",indir.Data(),RN));
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
   TFile *out = new TFile(Form("Nelec.root"),"recreate");
   TVector3 *vert;
   
-  TNtuple *tElec = new TNtuple("NElectrons","All DIS Electrons rec","Q2:W:Nu:vzec:Pex:Pey:Pez:event");
+  TNtuple *tElec = new TNtuple("NElectrons","All DIS Electrons rec","Q2:W:Nu:vzec:Pex:Pey:Pez:event:TargType:vze:sector");
   Float_t Data[tElec->GetNvar()];
   Double_t NeA=0,NeD=0;
   cout<<"number of files to be processed: "<<input->GetNFiles()<<endl;
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
   {
 
     Int_t nRows = input->GetNRows("EVNT");
-    if(nRows>0 && (t->GetCategorization(0,tt.Data())) == "electron" && t -> Q2() > 1. && t -> W() > 2. && t -> Nu() / Ebeam < 0.85)
+    if(nRows>0 && ( t->GetCategorization(0,tt.Data(),true) ) == "electron" && t -> Q2() > 1. && t -> W() > 2. && t -> Nu() / Ebeam < 0.85)
     {
       Data[0] = t -> Q2();
       Data[1] = t -> W();
@@ -98,7 +98,11 @@ int main(int argc, char *argv[])
       Data[4] = t -> Px(0);
       Data[5] = t -> Py(0);
       Data[6] = t -> Pz(0);
-      Data[7] = k;    
+      Data[7] = k;
+      Data[8] = t->ElecVertTarg();
+      Data[9] = t->Z(0);
+      Data[10] = t->Sector(0);
+
       tElec->Fill(Data);
       /*      if (-31.8<vzec&&vzec<-28.40){ NeD++;}
 	      else if (!(tt.CompareTo("Fe"))&& -25.65<vzec&&vzec<-24.26 ){NeA++;}

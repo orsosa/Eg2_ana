@@ -1,5 +1,5 @@
 #!/bin/bash
-acceptance="no"
+acceptance="yes"
 opt=""
 acc=""
 if [ $acceptance == "no" ]; then opt="-n"; acc="_na";echo "NOT USING ACCEPTANCE!";
@@ -7,8 +7,8 @@ else
     echo "USING ACCEPTANCE!"
 fi
 
-indir="ZQ2NuPt2_fullrange" #directory containing data and simulation binned.
-dir_suffix="${indir}/RatioZ_Pt2Q2Nu$acc" #outdir
+indir="Pt2Q2NuZpi0c_fullrange" #directory containing data and simulation binned.
+dir_suffix="${indir}/RatioPt2_ZQ2Nu$acc" #outdir
 bin_order="3,0,1,2" #Last bin is preserved, all others are integrated.
 # Pt2, Nu, Q2 schema, don't forget bining_info.txt
 

@@ -1,8 +1,8 @@
 {
-  TString acc="Z_Pt2Q2Nu";
-  TString indir="ZQ2NuPt2_fullrange";
-  TString Obs="Z";
-  TString binschema="Pt2_Q2_Nu_Z";
+  TString acc="Pt2_ZQ2Nu";
+  TString indir="Pt2Q2NuZpi0c_fullrange";
+  TString Obs="Pt2";
+  TString binschema="Z_Q2_Nu_Pt2";
   TString TayaSuffix="noRC";
   TString OsotoSuffix = "noRC";
   TString Taya=Form("Taya_dataR_%s%s.txt",Obs.Data(),TayaSuffix.Data());

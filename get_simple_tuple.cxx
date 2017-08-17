@@ -67,7 +67,7 @@ int main(int argc, char **argv)
     output = new TFile("local/prune_simul.root", "RECREATE", "Data of particles");
   }
 
-  TNtuple *tElec = new TNtuple("Electrons","All Electrons","Q2:W:Nu:vzec:Pex:Pey:Pez:event");
+  TNtuple *tElec = new TNtuple("e_rec","All Electrons","Q2:W:Nu:vzec:Pex:Pey:Pez:event");
   Float_t DataElec[tElec->GetNvar()];
 
   TNtuple *ntuple = new TNtuple(NtupleName,"stable particles",VarList);
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
   TNtuple *e_thrown=0;
   if(simul_key == 1) {
     ntuple_thrown = new TNtuple("ntuple_thrown","pi0 pluses",VarList);
-    e_thrown = new TNtuple("Electrons","All Electrons","Q2:W:Nu:vzec:Pex:Pey:Pez:event");
+    e_thrown = new TNtuple("e_thrown","All Electrons","Q2:W:Nu:vzec:Pex:Pey:Pez:event");
 }
 
 //  TH1F *ht = new TH1F("ht","tdiff",1000,-15,15); 

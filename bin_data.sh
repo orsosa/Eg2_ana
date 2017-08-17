@@ -1,5 +1,5 @@
 #!/bin/bash
-outdir="ZQ2NuPt2_fullrange/data"
+outdir="Pt2Q2NuZpi0c_fullrange/data"
 ./get_data_binned -f pi0_PbD.root -t Pb -d $outdir;
 ./get_data_binned -f pi0_PbD.root -t Pb -d $outdir -l;
 

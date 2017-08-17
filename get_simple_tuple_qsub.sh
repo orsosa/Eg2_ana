@@ -1,9 +1,9 @@
 #!/bin/bash -f
-#PBS -m n
-#PBS -l walltime=30:00:00
-#PBS -o /dev/null
-#PBS -e /dev/null
-#PBS -q utfsm
+#PBS -m n # no email
+#PBS -l walltime=30:00:00 # maximum time on wall
+#PBS -o /dev/null # no stdout
+#PBS -e /dev/null # no stderr
+#PBS -q utfsm # use utfsm queue
 
 sim=""
 if [ $# -eq 1 ]; then
@@ -35,7 +35,7 @@ if [ -z "$sim" ]; then
     cp local/prune_data_test.root $outdir"/pruned_"$rn".root"
 else
 #    indir=/data/atlas/users/orsosa/simulation/C_D5e6_$PBS_ARRAYID/ClasTool/
-    indir=/data/atlas/users/orsosa/simulation/Fe5e6_$PBS_ARRAYID/ClasTool/
+    indir=/data/atlas/users/orsosa/simulation/C5e6_$PBS_ARRAYID/ClasTool/
     find $indir -name "*.root" -print >simulFiles.txt
     /user/o/orsosa/osoto_ana/get_simple_tuple 1
     cp local/prune_simul.root $outdir"/pruned_simul_$PBS_ARRAYID.root"

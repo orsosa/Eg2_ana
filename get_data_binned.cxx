@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+
 TH1F *hW;
 TH1F *hW2;
 TH1F *hWmb;
@@ -33,6 +34,7 @@ TH1F *hT;
 TH2F *hEpi0_th;
 Float_t kMPi0= 1.35333e-01;
 Float_t kSPi0= 2.41528e-02;
+
 //Float_t kMPi0=5.39609e-01;
 //Float_t kSPi0=5.98542e-02;
 
@@ -67,15 +69,22 @@ int main(int argc, char *argv[])
 
   if(sim)
   {
-      kMPi0=1.33196e-1;//Got sim rec.
-      kSPi0=1.94034e-2;//Got sim rec.
-      NbinM=200;
+    kMPi0=1.33196e-1;//Got sim rec.
+    kSPi0=1.94034e-2;//Got sim rec.
+    NbinM=200;
+    //kMPi0=5.5e-1;//Got sim rec.
+    //kSPi0=1.94034e-2;//Got sim rec.
+    //NbinM=200;
   }
   else if(gsim)
   {
     kMPi0= 0.135;//Got from sim.
     kSPi0= 0.00066297;//Got from sim.
     NbinM=1e4;
+    //kMPi0= 0.55;//Got from sim.
+    //kSPi0= 0.00066297;//Got from sim.
+    //NbinM=1e4;
+
   }
   /*  else
   {
@@ -99,7 +108,7 @@ int main(int argc, char *argv[])
   if (stat(outdir.Data(), &sb) != 0)
   {
     std::cout<<Form("Error: directory %s doesn't exist!\ncreating directory\n",outdir.Data());
-    system(Form("mkdir %s",outdir.Data()));
+    system(Form("mkdir -p %s",outdir.Data()));
   }
   //char *infile = Form("%s/pi0_eta_sim_%sD_%s.root",outdir.Data(),st,tt);
   if(infile.IsNull()) infile.Append("pi0_CD.root");
@@ -112,7 +121,7 @@ int main(int argc, char *argv[])
   char *picdir=(char *)pd.c_str();
   if (stat(picdir, &sb) != 0)
   {
-      system(Form("mkdir %s",picdir));
+      system(Form("mkdir -p %s",picdir));
   }
 
   TFile * f  = new TFile(infile.Data(), "read");
@@ -127,6 +136,7 @@ int main(int argc, char *argv[])
   // pt2 = new TNtuple("pt2","parameters 2","p0:p1:p2:p3:p4:binpt2:binnu:binz");
   //  read_parameters(outdir.Data());
   Float_t minRange = kMPi0 - 3*kSPi0, maxRange=kMPi0 + 3*kSPi0;
+
   fmb = new TF1("fmb","pol2",minRange,maxRange);
   fpeak = new TF1("fpeak","gaus",minRange,maxRange);
   fsig = new TF1("fsig","fmb+fpeak",minRange,maxRange);
@@ -205,7 +215,26 @@ int main(int argc, char *argv[])
   t->SetAlias("Sectore",Form("(Phi%s>-30)*(int((Phi%s+90)/60) - 1) + (Phi%s<=-30)*(5)","e","e","e"));
   t->SetAlias("Sectorg",Form("(Phi%s>-30)*(int((Phi%s+90)/60) - 1) + (Phi%s<=-30)*(5)","g","g","g"));
   t->SetAlias("Eg","TMath::Sqrt(Px*Px+Py*Py+Pz*Pz)");
-  
+
+  t->SetAlias("E1q","TMath::Sqrt(qx1*qx1 + qy1*qy1 + qz1*qz1)");
+  t->SetAlias("E2q","TMath::Sqrt(qx2*qx2 + qy2*qy2 + qz2*qz2)");  
+
+  t->SetAlias("cos_alpha","(qx1*qx2 + qy1*qy2 +qz1*qz2 )/E1q/E2q");
+  t->SetAlias("alpha_d","acos(cos_alpha)*TMath::RadToDeg()");
+
+  t->SetAlias("E1tc","E1/(1.129-0.05793/E1 + 1.07e-12/E1/E1)");
+  t->SetAlias("E2tc","E2/(1.129-0.05793/E2 + 1.07e-12/E2/E2)");
+
+  if (!strcmp(tt,"Fe") )
+  {
+    t->SetAlias("E1tc","E1/(1.116-0.09213/E1 + 0.01007/E1/E1)");
+    t->SetAlias("E2tc","E2/(1.116-0.09213/E2 + 0.01007/E2/E2)");
+    
+  }
+  t->SetAlias("M_0","TMath::Sqrt(2*E1tc*E2tc*(1.-cos_alpha))"); 
+  if(gsim||sim)
+    t->SetAlias("M_0","TMath::Sqrt(2*E1*E2*(1.-cos_alpha))");
+
   TH1F *hM ;
   TH1F *hM_fine;
 
@@ -216,6 +245,7 @@ int main(int argc, char *argv[])
   Float_t highE =0;
   TCut cut;
   TCut DIS=Form("(Q2>1.0)&&(W>2)&&(Nu/%f)<0.85",kEbeam);
+  TCut alphamin = "alpha_d>3.2";
   TCut ttcut="1==1";
   if(!gsim&&!sim)
     ttcut=
@@ -266,13 +296,13 @@ int main(int argc, char *argv[])
 
     Double_t *M,*Event;
     TString draw_text;
-    draw_text.Append("M:Event");
+    draw_text.Append("M_0:Event");
     for (int i=0;i<NFold;i++)
     {
       draw_text.Append(":");
       draw_text.Append(BinName[i]);
     }
-    Int_t size = t->Draw(draw_text.Data(),cut&&DIS&&ttcut,"goffcandle");
+    Int_t size = t->Draw(draw_text.Data(),cut&&DIS&&ttcut&&alphamin,"goffcandle");
     std::cout<<"number of event on bin: "<<size<<std::endl;
     cut.Clear();
     M=t->GetVal(0);

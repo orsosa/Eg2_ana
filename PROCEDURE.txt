@@ -1,3 +1,4 @@
+######### OLD ##########
 1 - get_simple_tuple.cxx -> tuple with data pruned
 
   2.1 - pi0_eta_id_acc.cxx -> rec pi0(aa) on reconstructed data
@@ -14,3 +15,11 @@
           tuple1 (Q2,Nu,Z), tuple2 (Pt2,Nu,Z)
       
 	5 - get_acceptance.cxx
+
+############ NEW ##############
+
+1 - get_simple_tuple.cxx -> tuple with data pruned           
+  2.1 eta_id.cxx
+      3.1 bin_data.sh
+      3.2 bin_sim.sh
+      	  

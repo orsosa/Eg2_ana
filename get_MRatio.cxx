@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
   if (srLTfile.IsNull())  srLTfile.Append(Form("%s/sim_CD_D/binned.root",indir.Data()));
   if (gsLTfile.IsNull())  gsLTfile.Append(Form("%s/gsim_CD_Dgsim/binned.root",indir.Data()));
   if (srSTfile.IsNull())  srSTfile.Append(Form("%s/sim_CD_C/binned.root",indir.Data()));
-if (gsSTfile.IsNull())  gsSTfile.Append(Form("%s/gsim_CD_Cgsim/binned.root",indir.Data()));
+  if (gsSTfile.IsNull())  gsSTfile.Append(Form("%s/gsim_CD_Cgsim/binned.root",indir.Data()));
   if (dataLTfile.IsNull())  dataLTfile.Append(Form("%s/data_%sD_D/binned.root",indir.Data(),st.Data()));
   if (dataSTfile.IsNull())  dataSTfile.Append(Form("%s/data_%sD_%s/binned.root",indir.Data(),st.Data(),st.Data()));
 
@@ -72,11 +72,14 @@ if (gsSTfile.IsNull())  gsSTfile.Append(Form("%s/gsim_CD_Cgsim/binned.root",indi
   std::cout<<"########\nsolid sim rec file: "<<srSTfile.Data()<<" gsim file: "<<gsSTfile.Data()<<"\n##########\n";
   std::cout<<"########\ndata solid: "<<dataSTfile.Data()<<" data liquid: "<<dataLTfile.Data()<<"\n##########\n";
 
-
-  TFile * frLT = new TFile(srLTfile.Data(),"read");
-  TFile * fgLT = new TFile(gsLTfile.Data(),"read");
-  TFile * frST = new TFile(srSTfile.Data(),"read");
-  TFile * fgST= new TFile(gsSTfile.Data(),"read");
+  TFile *frLT, *fgLT, *frST, *fgST;
+  if(!no_acc)
+  {
+    frLT = new TFile(srLTfile.Data(),"read");
+    fgLT = new TFile(gsLTfile.Data(),"read");
+    frST = new TFile(srSTfile.Data(),"read");
+    fgST = new TFile(gsSTfile.Data(),"read");
+  }
   TFile * fdataLT= new TFile(dataLTfile.Data(),"read");
   TFile * fdataST= new TFile(dataSTfile.Data(),"read");
   TFile * fdataElec= new TFile(dataElecfile.Data(),"read");
@@ -96,7 +99,6 @@ if (gsSTfile.IsNull())  gsSTfile.Append(Form("%s/gsim_CD_Cgsim/binned.root",indi
     suffix.Append(BinName[binorder[kf]]);
     bin_info.Append(",");
     bin_info.Append(BinName[binorder[kf]]);
-
   }
   bin_info.Append(")");
 
@@ -118,18 +120,20 @@ if (gsSTfile.IsNull())  gsSTfile.Append(Form("%s/gsim_CD_Cgsim/binned.root",indi
   TNtuple *tr1LT, *tr1sLT,  *tg1LT, *tg1sLT, *tr1ST, *tr1sST,  *tg1ST, *tg1sST, *tdLT, *tdsLT, *tdST, *tdsST;
   TTree *tde;
 
-
-  tr1LT = (TNtuple *)frLT ->Get("raw_binned");
-  tr1sLT = (TNtuple *)frLT ->Get("Amp_binned");
-
-  tg1LT = (TNtuple *)fgLT ->Get("raw_binned");
-  tg1sLT = (TNtuple *)fgLT ->Get("Amp_binned");
-
-  tr1ST = (TNtuple *)frST ->Get("raw_binned");
-  tr1sST = (TNtuple *)frST ->Get("Amp_binned");
-
-  tg1ST = (TNtuple *)fgST ->Get("raw_binned");
-  tg1sST = (TNtuple *)fgST ->Get("Amp_binned");
+  if (!no_acc)
+  {
+    tr1LT = (TNtuple *)frLT ->Get("raw_binned");
+    tr1sLT = (TNtuple *)frLT ->Get("Amp_binned");
+    
+    tg1LT = (TNtuple *)fgLT ->Get("raw_binned");
+    tg1sLT = (TNtuple *)fgLT ->Get("Amp_binned");
+    
+    tr1ST = (TNtuple *)frST ->Get("raw_binned");
+    tr1sST = (TNtuple *)frST ->Get("Amp_binned");
+    
+    tg1ST = (TNtuple *)fgST ->Get("raw_binned");
+    tg1sST = (TNtuple *)fgST ->Get("Amp_binned");
+  }
 
   tdLT = (TNtuple *)fdataLT ->Get("raw_binned");
   tdsLT = (TNtuple *)fdataLT ->Get("Amp_binned");
@@ -159,7 +163,8 @@ if (gsSTfile.IsNull())  gsSTfile.Append(Form("%s/gsim_CD_Cgsim/binned.root",indi
   draw_text.Append(BinName[binorder[NFold-1]]);
   draw_text.Append(")");
   */
-  TString draw_text="(amp*mbratio)";
+  //TString draw_text="(amp*mbratio)";
+  TString draw_text="(amp)";
   for (int k=0;k<NFold;k++)
   {
   draw_text.Append(":");
@@ -188,43 +193,48 @@ if (gsSTfile.IsNull())  gsSTfile.Append(Form("%s/gsim_CD_Cgsim/binned.root",indi
   }
 
 
-
-  Int_t nbrLT = tr1sLT->Draw(draw_text.Data(),"","goffcandle");
-
-  Int_t nbgLT = tg1sLT->Draw(draw_text.Data(),"","goffcandle");
-
-  Int_t nbrST = tr1sST->Draw(draw_text.Data(),"","goffcandle");
-
-  Int_t nbgST = tg1sST->Draw(draw_text.Data(),"","goffcandle");
-
+  Int_t nbrLT,nbgLT,nbrST,nbgST;
+  if (!no_acc)
+  {
+    nbrLT = tr1sLT->Draw(draw_text.Data(),"","goffcandle");
+    nbgLT = tg1sLT->Draw(draw_text.Data(),"","goffcandle");
+    nbrST = tr1sST->Draw(draw_text.Data(),"","goffcandle");
+    nbgST = tg1sST->Draw(draw_text.Data(),"","goffcandle");
+  }
 
   draw_text.Append(":(mbr_err*mbr_err/mbratio/mbratio)");
+  //  draw_text.Append(":(mbr_err*mbr_err/mbratio/mbratio)");
   std::cout<< draw_text<<std::endl;
+  //tdsLT->Print();
+  //tdsST->Print();
   Int_t nbsdLT = tdsLT->Draw(draw_text.Data(),"","goffcandle");
 
   Int_t nbsdST = tdsST->Draw(draw_text.Data(),"","goffcandle");
 
-
   cout<<"nbrLT\tnbgLT\n";
 
-  cout<<nbrLT<<"\t"<<nbgLT<<endl;
+  cout<<nbsdLT<<"\t"<<nbsdST<<endl;
   if (nbrLT!=nbgLT) cout<<"warning nbins different: "<<endl;
   
   for (int k=0; k<NFold;k++) std::cout<<BinName[binorder[k]]<<"\t";
 
   std::cout<<"NhST\t\tAccST\t\tNhLT\t\taccLT\n";
-  for (int i=0; i<nbrLT;i++)
+  for (int i=0; i<nbsdLT;i++)
   {
 
-    Float_t accLT = tr1sLT->GetVal(0)[i]/tg1sLT->GetVal(0)[i];
-    Float_t accST = tr1sST->GetVal(0)[i]/tg1sST->GetVal(0)[i];
-    Float_t sigAccLT = accLT*TMath::Sqrt(1./tr1sLT->GetVal(0)[i] + 1./tg1sLT->GetVal(0)[i]);
-    Float_t sigAccST = accST*TMath::Sqrt(1./tr1sST->GetVal(0)[i] + 1./tg1sST->GetVal(0)[i]);
-
-    if(no_acc)
+    Float_t accLT,accST,sigAccLT,sigAccST;
+    
+    if (no_acc)
     {
       sigAccST = sigAccLT = 0.;
       accLT=accST=1.;
+    }
+    else
+    {
+      accLT = tr1sLT->GetVal(0)[i]/tg1sLT->GetVal(0)[i];
+      accST = tr1sST->GetVal(0)[i]/tg1sST->GetVal(0)[i];
+      sigAccLT = accLT*TMath::Sqrt(1./tr1sLT->GetVal(0)[i] + 1./tg1sLT->GetVal(0)[i]);
+      sigAccST = accST*TMath::Sqrt(1./tr1sST->GetVal(0)[i] + 1./tg1sST->GetVal(0)[i]);
     }
 
     
@@ -269,8 +279,9 @@ if (gsSTfile.IsNull())  gsSTfile.Append(Form("%s/gsim_CD_Cgsim/binned.root",indi
     for (int k = 1; k<=hNhST->GetNbinsX();k++)
     {
       Float_t R = (hNhST->GetBinContent(k)) / (hNhLT->GetBinContent(k));
-      
+      std::cout<<"yield "<<R<<endl;
       Float_t MR = R*NeD/NeA;
+      std::cout<<"yield normalized "<<MR<<endl;
       //      Float_t MR = R;
       hMRatioProj->SetBinContent(k,MR);
       Float_t err = R*TMath::Sqrt( (hsigUp->GetBinContent(k) / (hNhST->GetBinContent(k)*hNhST->GetBinContent(k) ) + hsigDown->GetBinContent(k) / (hNhLT->GetBinContent(k)*hNhLT->GetBinContent(k))  + 1. / NeA + 1./NeD ) ) ;

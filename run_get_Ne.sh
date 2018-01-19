@@ -14,12 +14,12 @@ echo working on `pwd`
 
 ################################ PARAMETERS  ###################################
 sim_src="H" # Simulation source. O | H | R
-cut_src="O" # Electron vertex cut source. T | R | O | L | H  (Taya, Raphael, Orlando, Lamiaa, Hayk).
+cut_src="H" # Electron vertex cut source. T | R | O | L | H  (Taya, Raphael, Orlando, Lamiaa, Hayk).
 fix_vz_high="ok" # Fix solid vz high limit to -20 cm if value assigned different from "".
 cmd_arg="-s ${sim_src} -c ${cut_src}"
 ############  OUTPUT FILENAME ##############################
 
-fout="/data/user/o/orsosa/osoto_ana/Ne_AllTarg_${sim_src}Sim_${cut_src}cut"
+fout="/data/user/o/orsosa/osoto_ana/Ne_AllTarg_${sim_src}Sim_${cut_src}cut_noycut"
 
 if [ ! -z ${fix_vz_high} ]; then
     fout=${fout}_fix_vz_high.root

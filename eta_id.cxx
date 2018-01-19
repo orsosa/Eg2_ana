@@ -15,6 +15,7 @@
 #include "TDatabasePDG.h"
 #include "TParticlePDG.h"
 #include "TMatrixD.h"
+#include "TClonesArray.h"
 #include <vector>
 #include <sys/stat.h>
 #include <cstdarg>
@@ -51,6 +52,7 @@ Float_t nuBin[4]={2.2, 3.2, 3.73, 4.25};
 Float_t Pt2Bin[7]={0., 0.1, 0.25, 0.4, 0.55, 0.75, 0.9};
 
 Float_t kMprt=0.938272, kMntr =0.939565;
+TClonesArray *P4Arr;
 
 class Particle: public TLorentzVector
 {
@@ -223,7 +225,11 @@ public:
   Float_t *kData;
   Float_t *keData;
 
-  TNtuple *kOutData, *kOutBkgnd, *kElecData;
+  TNtuple  *kElecData;
+
+  TTree *kOutData, *kOutBkgnd;
+
+  //  TTree *kP4Tree;
   bool fEMatch;
   
   int kPPid;
@@ -241,6 +247,7 @@ public:
     }
     kOutBkgnd->Write("",TObject::kOverwrite);
     kElecData->Write("",TObject::kOverwrite);
+    //kP4Tree->Write("",TObject::kOverwrite);
     return kOutData->Write("",TObject::kOverwrite);
   }
   ~Reaction()
@@ -251,6 +258,8 @@ public:
     delete kOutData;
     delete kOutBkgnd;
     delete[] kData;
+    delete[] keData;
+    delete P4Arr;
     kOutFile->Close();
     delete kOutFile;
     delete kPdgInfo;
@@ -269,14 +278,26 @@ public:
   //// To store different information modify init() and fill()
   int init()
   {
+
     kNSecondary=0;
     kOutFile = new TFile(filename,"recreate");
     //kOutData=new TNtuple("outdata",Form("%s",name),"M:Phx:Phy:Phz:Nu:Q2:Z:Cospq:Pt2:Event:M2_01:M2_02:M_c:Phx_c:Phy_c:Phz_c:Z_c:Cospq_c:Pt2_c:Chi2:qx1:qy1:qz1:qx2:qy2:qz2");
-    kOutData = new TNtuple("outdata",Form("%s",name),"M:Phx:Phy:Phz:Nu:Q2:Z:Cospq:Pt2:Event:M2_01:M2_02:vzec:z1:z2:z3:W:vxec:vyec:qx1:qy1:qz1:qx2:qy2:qz2:E1:E2:E1c:E2c:x1:y1:x2:y2");
+    //kOutData = new TNtuple("outdata",Form("%s",name),
+    TString varlist="M:Phx:Phy:Phz:Nu:Q2:Z:Cospq:Pt2:Event:M2_01:M2_02:vzec:z1:z2:z3:W:vxec:vyec:qx1:qy1:qz1:qx2:qy2:qz2:E1:E2:E1c:E2c:x1:y1:x2:y2";
     kElecData = new TNtuple("ElecData",Form("%s",name),"Nu:Q2:Event:vzec:Ee:Pex:Pey:Pez:W");
-    kOutBkgnd = (TNtuple *)kOutData->Clone("outbkgnd"); 
-    kData = new Float_t[kOutData->GetNvar()];
+
+
+    kData = new Float_t[varlist.CountChar(':')+1];
     keData = new Float_t[kElecData->GetNvar()];
+    P4Arr = new TClonesArray("TLorentzVector");
+    kOutData = new TTree("outdata",Form("%s",name));
+    kOutData->Branch("P4",&P4Arr,6);
+    kOutData->Branch("primary",kData,varlist);
+
+    kOutBkgnd = kOutData->CloneTree(0);
+    kOutBkgnd->SetName("outbkgnd");
+    
+    
     return 0;
   }
 
@@ -301,7 +322,7 @@ public:
   }
 
 
-  int fill(Combo *comb,TNtuple *tuple)
+  int fill(Combo *comb,TTree *ttree)
   {
     Double_t Px = comb->Px();
     Double_t Py = comb->Py();
@@ -312,7 +333,6 @@ public:
     Float_t cospq = ((kEbeam-Pez_prev)*Pz - Pex_prev*Px - Pey_prev*Py)/( sqrt((Q2_prev + Nu_prev*Nu_prev)*P2) );
     Float_t Pt2 = P2*(1-cospq*cospq);
     
-
     kData[0] = M;
     kData[1] = Px;
     kData[2] = Py;
@@ -360,9 +380,8 @@ public:
     if (0.35<E2&&E2<1.2) kData[28] /= hcfm->GetBinContent(hcfm->FindBin(E2));
     kData[29] =(*comb)[0]->vx;
     kData[30] =(*comb)[0]->vy;
-    kData[29] =((comb->Npart>1)?(*comb)[1]->vx:0);
-    kData[30] =((comb->Npart>1)?(*comb)[1]->vy:0);
-
+    kData[31] =((comb->Npart>1)?(*comb)[1]->vx:0);
+    kData[32] =((comb->Npart>1)?(*comb)[1]->vy:0);
 
     /*  
     Double_t *W = new Double_t[4];
@@ -418,7 +437,44 @@ public:
     kData[24] = qy2;
     kData[25] = qz2;
 */
-    return tuple->Fill(kData);
+    /*
+    ////// 3pi0-> 6a ///////////////////////////////////////////
+    Double_t dist=1e7;
+    Double_t M2_etaN=0;
+    Double_t M2_eta0=2*0.135*0.135;
+    Int_t order=4321;
+    Int_t indexes[15]={4321, 4231, 4132};
+    Int_t kk=0;
+    for (int j=0;j<3;j++)
+    {
+      kk=indexes[j];
+      M2_etaN=(*(*comb)[kk/int(1e3)-1] + *(*comb)[kk%int(1e3)/int(1e2)-1]).M2() \
+            + (*(*comb)[kk%int(1e2)/int(1e1)-1] + *(*comb)[kk%int(1e1)-1]).M2();
+      if (TMath::Abs(M2_etaN - M2_eta0)<dist)
+      {
+	order=indexes[j];
+	dist=TMath::Abs(M2_etaN - M2_eta0);
+      }
+    }
+    */
+    //Int_t ind[4]={order/int(1e3), order%int(1e3)/int(1e2), order%int(1e2)/int(1e1), order%int(1e1)};
+    ////////////////////////////////////////////////////////
+
+    Int_t ind[4]={1,2,3,4};
+    for (int k=0;k<kNSecondary;k++)
+    {
+      
+      Double_t px= (*comb)[ind[k]-1]->Px();
+      Double_t py= (*comb)[ind[k]-1]->Py();
+      Double_t pz= (*comb)[ind[k]-1]->Pz();
+      Double_t e= (*comb)[ind[k]-1]->E();
+      
+      new ((*P4Arr)[k]) TLorentzVector(px,py,pz,e);
+    }
+
+    return ttree->Fill();
+      
+
   }
   //////////////////////////
   inline   Double_t kinFit(Double_t *W, Double_t *Wa, TMatrixD &V ){
@@ -490,6 +546,8 @@ public:
     }
     else
       kNSPid[pid]++;
+
+
     return pid;
   }
 
@@ -617,7 +675,8 @@ public:
       Ep=E;
       if (data_type<2)// not gsim
       {
-	Ep = (pid==22)? (E/0.272):((pid==211 || pid==-211)?P:(sqrt(P*P+ TMath::Power(TDatabasePDG::Instance()->GetParticle("pi-")->Mass(),2))));
+	Ep = (pid==22)? (E/0.272):( (pid==211 || pid==-211)?(sqrt(P*P+ TMath::Power(TDatabasePDG::Instance()->GetParticle("pi-")->Mass(),2)) ):E);
+
       }
       if (evnt==evnt_prev)
       {
@@ -923,6 +982,7 @@ int main(int argc, char *argv[])
   r.addSecondary("pi-");
 */
 
+  /*
   // w -> pi+ pi- a a
   Reaction r("w -> pi+ pi- a a","wout.root");
   r.addPrimary("omega");
@@ -930,16 +990,57 @@ int main(int argc, char *argv[])
   r.addSecondary("gamma");
   r.addSecondary("pi+");
   r.addSecondary("pi-");
-    
+  */
 
-  /*  
-  Reaction r("eta -> pi+ pi- a a","test_pippimaaOnlyFe.root",true);
+  /*    
+  //eta -> a a pi+ pi-
+  Reaction r("eta -> a a pi+ pi-","etaout_all.root",false);
   r.addPrimary("eta");
+  r.addSecondary("gamma");
+  r.addSecondary("gamma");
   r.addSecondary("pi+");
   r.addSecondary("pi-");
+  */
+
+  //eta -> a a
+  Reaction r("eta -> a a","etaout_aa_all.root",false);
+  r.addPrimary("eta");
+  r.addSecondary("gamma");
+  r.addSecondary("gamma");  
+
+  /*
+ //eta -> 3pi0 -> 6a 
+  Reaction r("eta ->  3pi0 -> 6a","etaout6a.root",true);
+  r.addPrimary("eta");
+  r.addSecondary("gamma");
+  r.addSecondary("gamma");
+  r.addSecondary("gamma");
+  r.addSecondary("gamma");
   r.addSecondary("gamma");
   r.addSecondary("gamma");
   */
+
+  /*
+  //eta -> 2pi0 -> 4a 
+  Reaction r("eta ->  2pi0 -> 4a","etaout4a.root",true);
+  r.addPrimary("eta");
+  r.addSecondary("gamma");
+  r.addSecondary("gamma");
+  r.addSecondary("gamma");
+  r.addSecondary("gamma");
+  */
+
+
+  /*  
+  //corr -> pi+ pi+ pi-
+  Reaction r("K0 -> pi+ pi+ pi-","pip_corr.root",true);
+  r.addPrimary("K0");
+  r.addSecondary("pi+");
+  r.addSecondary("pi+"); 
+  r.addSecondary("pi-");
+  */
+
+
 
   r.getCombinations(t);
   r.store();

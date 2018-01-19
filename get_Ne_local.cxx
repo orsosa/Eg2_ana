@@ -77,7 +77,8 @@ Float_t get_Ne_by_target(TString st = "C-thickD2",struct data *tc=0)
   Float_t limRPb[6][2]={ {-25.55,-24.05},{-26.05,-24.55},{-26.25,-24.75},{-25.75,-24.25},{-25.25,-23.75},{-25.05,-23.55}  };
 
 
-  TCut DIS ="Q2>1.&&W>2.&&Nu/5.014<0.85";
+  //  TCut DIS ="Q2>1.&&W>2.&&Nu/5.014<0.85";
+  TCut DIS ="Q2>1.&&W>2.";
   TCut D2="";
   if (taya_cut) D2= "-31.8<vzec&&vzec<-28.40";
   

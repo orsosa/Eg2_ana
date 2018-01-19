@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include "TEllipse.h"
 #include "RooGaussian.h"
 #include "RooRealVar.h"
 #include "RooFormulaVar.h"
@@ -31,24 +32,24 @@
 #include "RooPolynomial.h"
 #include "RooChebychev.h"
 #include "RooDataHist.h"
+#include "RooDataSet.h"
 #include "RooFitResult.h"
 #include "RooAddPdf.h"
 #include "RooPlot.h"
 #include "RooArgList.h"
 
 using namespace RooFit;
-
 TH1F *hW;
 TH1F *hW2;
 TH1F *hWmb;
 TH1F *hW2mb;
 TH1F *hT;
 TH2F *hEpi0_th;
-Float_t kMPi0= 1.35333e-01;
-Float_t kSPi0= 2.41528e-02;
+//Float_t kMPi0= 1.35333e-01;
+//Float_t kSPi0= 2.41528e-02;
 
-//Float_t kMPi0=5.39609e-01;
-//Float_t kSPi0=5.98542e-02;
+Float_t kMPi0=5.39609e-01;
+Float_t kSPi0=5.98542e-02;
 
 Float_t kPt2,kEvent; 
 TNtuple *tuple1, *tuple2, *tuple1s, *tuple2s, *pt1, *pt2, *tupleElec;
@@ -73,6 +74,9 @@ Float_t kMprt=0.938272, kMntr =0.939565;
 TString outdir;
 TString infile;
 TString outfile;
+TCanvas *c;
+char *picdir;
+TTree *seltree;
 #include "tools.hxx"
 
 int main(int argc, char *argv[])
@@ -130,7 +134,7 @@ int main(int argc, char *argv[])
     exit(1);
   }
   std::string pd=Form("%s/rspic",outdir.Data());
-  char *picdir=(char *)pd.c_str();
+  picdir=(char *)pd.c_str();
   if (stat(picdir, &sb) != 0)
   {
       system(Form("mkdir -p %s",picdir));
@@ -138,18 +142,23 @@ int main(int argc, char *argv[])
 
   TFile * f  = new TFile(infile.Data(), "read");
   //  TFile * f2 = new TFile("local/prune_simul.root","read"); //To get GSIM
-  TCanvas *c  = new TCanvas("c", "The canvas",800,600);
+  c  = new TCanvas("c", "The canvas",800,600);
   if (gsim) c->SetLogy();
-  TNtuple *t = (TNtuple *) f->Get("outdata");
+  TTree *t = (TTree *) f->Get("outdata");
   if (gsim) t->SetEstimate(10e6);
-  TNtuple *tb = (TNtuple *) f->Get("outbkgnd");
-  TNtuple *te = (TNtuple *) f->Get("ElecData");
+  TTree *tb = (TTree *) f->Get("outbkgnd");
+  TTree*te = (TTree *) f->Get("ElecData");
   //pt1 = new TNtuple("pt1","parameters 1","p0:p1:p2:p3:p4:binq2:binnu:binz");
   // pt2 = new TNtuple("pt2","parameters 2","p0:p1:p2:p3:p4:binpt2:binnu:binz");
   //  read_parameters(outdir.Data());
 
-  //  Float_t minRange = 0.52, maxRange = 0.6;
-  Float_t minRange = 0.74, maxRange = 0.82;
+
+  ///////////////// MASS PLOT RANGE ///////////////////////////////////
+
+  Float_t minRange,maxRange,Nit=1;
+  minRange = 0.4, maxRange = 0.9;
+  //Float_t minRange = 0.74, maxRange = 0.82;
+  ////////////////////////////////////////////////////////////////
 
   fmb = new TF1("fmb","pol2",minRange,maxRange);
   fpeak = new TF1("fpeak","gaus",minRange,maxRange);
@@ -307,6 +316,41 @@ int main(int argc, char *argv[])
   t->SetAlias("mpip","TMath::Sqrt(Epip*Epip - (fX[2]*fX[2] + fY[2]*fY[2] +  fZ[2]*fZ[2]))");
   t->SetAlias("mpim","TMath::Sqrt(Epim*Epim - (fX[3]*fX[3] + fY[3]*fY[3] +  fZ[3]*fZ[3]))");
 
+  t->SetAlias("Pxpip","fX[2]");
+  t->SetAlias("Pypip","fY[2]");
+  t->SetAlias("Pzpip","fZ[2]");
+  t->SetAlias("Pxpim","fX[3]");
+  t->SetAlias("Pypim","fY[3]");
+  t->SetAlias("Pzpim","fZ[3]");
+
+  t->SetAlias("Mpi0pip","TMath::Sqrt((Epi0+Epip)*(Epi0+Epip) - (Pxpi0+Pxpip)*(Pxpi0+Pxpip)  - (Pypi0+Pypip)*(Pypi0+Pypip) - (Pzpi0+Pzpip)*(Pzpi0+Pzpip))");
+  t->SetAlias("Mpimpip","TMath::Sqrt((Epim+Epip)*(Epim+Epip) - (Pxpim+Pxpip)*(Pxpim+Pxpip)  - (Pypim+Pypip)*(Pypim+Pypip) - (Pzpim+Pzpip)*(Pzpim+Pzpip))");
+  t->SetAlias("Mpi0pim","TMath::Sqrt((Epi0+Epim)*(Epi0+Epim) - (Pxpi0+Pxpim)*(Pxpi0+Pxpim)  - (Pypi0+Pypim)*(Pypi0+Pypim) - (Pzpi0+Pzpim)*(Pzpi0+Pzpim))");
+
+  //  outdata->SetAlias("xd","Mpi0pip-0.31");
+  //outdata->SetAlias("yd","Mpi0pip-0.39");
+  //TCut dalitzCut = "xd*xd+yd*yd<0.05*0.05";
+
+  Float_t xc=9.32886e-02,rx= 3.*1.41376e-02,yc=1.16822e-01,ry=3.*2.20606e-02;
+
+  t->SetAlias("xd","Mpi0pim*Mpi0pim");
+  t->SetAlias("yd","Mpi0pip*Mpi0pip");
+
+  t->SetAlias("xd0_rx",Form("(xd-%f)/%f",xc,rx));
+  t->SetAlias("yd0_ry",Form("(yd-%f)/%f",yc,ry));
+
+
+  //  TCut dalitzCut = "xd0_rx*xd0_rx + yd0_ry*yd0_ry<1";
+  TCut dalitzCut = "0<xd&&xd<0.16&&0<yd&&yd<0.3";
+
+
+  t->SetAlias("Tpip","Epip_b-0.13957");
+  t->SetAlias("Tpim","Epim_b-0.13957");
+  t->SetAlias("Tpi0","Epi0_b-mpi0");
+  t->SetAlias("Qeta","Tpip+Tpim+Tpi0");
+  t->SetAlias("X","sqrt(3)*(Tpip-Tpim)/Qeta");
+  t->SetAlias("Y","3*Tpi0/Qeta-1");
+  
   t->SetAlias("Dm","meta-mpi0-mpip-mpim+0.135+0.140+0.140");
   t->SetAlias("DDm","meta-mpi0-mpip-mpim+0.135+0.140+0.140");
   TCut pi0cut = "0.1<mpi0&&mpi0<0.18";
@@ -315,7 +359,8 @@ int main(int argc, char *argv[])
   TCut planecut = "-0.1<crossDot&&crossDot<0.1";
   TCut metacut = "0.52<Dm&&Dm<0.6";
   TCut momegacut = "0.74<Dm&&Dm<0.82";
-  ///////////// new Aliases
+
+  ///////////// END new Aliases ///////////////
 
   if (!strcmp(tt,"Fe") )
   {
@@ -352,16 +397,16 @@ int main(int argc, char *argv[])
   for (int k = 0;k <Nbins; k++)
   {
     //fmb = new TF1("fmb","pol2",0.0,0.2);
-    hM = new TH1F(Form("hM_bin%d",k),"M_{#gamma #gamma}",NbinM,minRange-0.1,maxRange+0.1);
+    hM = new TH1F(Form("hM_bin%d",k),"m(#pi^{0}(#gamma#gamma)#pi^{+}#pi^{-})",NbinM,minRange-0.1,maxRange+0.1);
     hM->SetMarkerStyle(kOpenCircle);
     hM->SetMarkerColor(kBlue);
-    hM->GetXaxis()->SetTitle("M_{#gamma#gamma} (GeV)");
+    hM->GetXaxis()->SetTitle("m(#pi^{0}(#gamma#gamma)#pi^{+}#pi^{-}) (GeV)");
     hM->GetYaxis()->SetTitle("dN/dM (GeV)");
 
     hM_fine = new TH1F(Form("hM_fine_bin%d",k),"M_{#gamma #gamma}",200,minRange-0.1,maxRange+0.1);
     hM_fine->SetMarkerStyle(kOpenCircle);
     hM_fine->SetMarkerColor(kBlack);
-    hM_fine->GetXaxis()->SetTitle("M_{#gamma#gamma} (GeV)");
+    hM_fine->GetXaxis()->SetTitle("m(#pi^{0}(#gamma#gamma)#pi^{+}#pi^{-}) (GeV)");
     hM_fine->GetYaxis()->SetTitle("dN/dM (GeV)");
 
     std::cout<< "\n\n";
@@ -388,14 +433,19 @@ int main(int argc, char *argv[])
 
     Double_t *M,*Event;
     TString draw_text;
-    draw_text.Append("Dm:Event");
+    draw_text.Append("meta:Event");
     for (int i=0;i<NFold;i++)
     {
       draw_text.Append(":");
       draw_text.Append(BinName[i]);
     }
+
+    //    get_dalitzCut(t,dalitzCut,cut);
     //    Int_t size = t->Draw(draw_text.Data(),cut&&DIS&&ttcut&&alphamin,"goffcandle");
-    Int_t size = t->Draw(draw_text.Data(),cut&&DIS&&ttcut&&pi0cut,"goffcandle");
+    RooRealVar meta("meta","M(#pi^{+}#pi^{-}#pi^{0})",minRange,maxRange);
+
+    RooDataSet *ds = new RooDataSet("ds","data set",meta);
+    Int_t size = t->Draw(draw_text.Data(),cut&&DIS&&ttcut&&pi0cut&&dalitzCut,"goffcandle");
     std::cout<<"number of event on bin: "<<size<<std::endl;
     cut.Clear();
     M=t->GetVal(0);
@@ -413,37 +463,43 @@ int main(int argc, char *argv[])
 
       hM->Fill(M[i]);
       hM_fine->Fill(M[i]);
+      meta=M[i];
+      ds->add(meta);
     }
 
-
     Float_t err;
-    RooRealVar Ns("Ns","signal counts",100,0,10000);
-    RooRealVar Nb("Nb","background counts",300,0,10000);
-    //    Float_t mbratio=fit_pdf(hM, minRange, maxRange, err, Ns, Nb, 1);
+    RooRealVar Ns("Ns","signal counts",100.,0.,10000.);
+    RooRealVar Nb("Nb","background counts",300.,0.,10000.);    
 
-    Float_t mbratio=get_mbratio(hM,minRange,maxRange,err,2);
+    RooPlot* frame=fit_pdf(hM, minRange, maxRange, err, Ns, Nb, ds,&meta, 1, 0.53,0.05);
+    Float_t mbratio=Ns.getVal()/Nb.getVal();
 
-    //    Float_t Nh_fine=get_Nh(hM_fine,minRange,maxRange,2);
+    //Float_t mbratio=get_mbratio(hM,minRange,maxRange,err,2,0.55,0.05);
+
+    //Float_t Nh_fine=get_Nh(hM_fine,minRange,maxRange,2);
     //Float_t Nh=get_Nh(hM,minRange,maxRange,2);
 
-    //    cout<<"Nh; coarse: "<<Nh<<" fine: "<<Nh_fine;
+    //cout<<"Nh; coarse: "<<Nh<<" fine: "<<Nh_fine;
 
-    t1sData[2*NFold]=size;
+    t1sData[2*NFold]=Ns.getVal();
+    //t1sData[2*NFold]=size;
     //t1sData[2*NFold]=Nh;
     
     t1sData[2*NFold+1]=k;
     
     t1sData[2*NFold+2]=mbratio;
     //t1sData[2*NFold+2]=1.;
-
-    t1sData[2*NFold+3]=err;
+    t1sData[2*NFold+3]=Ns.getError();
+    //t1sData[2*NFold+3]=err;
 
     tuple1s->Fill(t1sData);
-
+    frame->Draw();
     c->SaveAs(Form("%s/hM1_%d.gif",picdir,k));
     c->SaveAs(Form("%s/hM1_%d.C",picdir,k));
   
     hM->Write("",TObject::kOverwrite);
+    frame->Write(Form("frm1_%d",k),TObject::kOverwrite);
+    ds->Write(Form("ds1_%d",k),TObject::kOverwrite);
     //    hM->Draw("e");
     if (k!=0) c->SaveAs(Form("%s/hM_mov.gif+30",outdir.Data()));
     else c->SaveAs(Form("%s/hM_mov.gif",outdir.Data()));

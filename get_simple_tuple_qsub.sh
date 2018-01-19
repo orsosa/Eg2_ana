@@ -25,6 +25,7 @@ fi
 cd $TMPDIR
 mkdir local
 source /user/o/orsosa/set_64bit.sh;
+############ data ###############
 if [ -z "$sim" ]; then
     
     rn=`sed -n "$PBS_ARRAYID{p;q}" $runlist`
@@ -34,6 +35,7 @@ if [ -z "$sim" ]; then
     /user/o/orsosa/osoto_ana/get_simple_tuple
     cp local/prune_data_test.root $outdir"/pruned_"$rn".root"
 else
+########## simulation ##########
 #    indir=/data/atlas/users/orsosa/simulation/C_D5e6_$PBS_ARRAYID/ClasTool/
     indir=/data/atlas/users/orsosa/simulation/C5e6_$PBS_ARRAYID/ClasTool/
     find $indir -name "*.root" -print >simulFiles.txt

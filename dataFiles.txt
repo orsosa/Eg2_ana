@@ -1,0 +1,15 @@
+/data/atlas/users/orsosa/eg2_data_ct/Pb-thinD2/41996/ct_41996_17.pass2.root
+/data/atlas/users/orsosa/eg2_data_ct/Pb-thinD2/41996/ct_41996_01.pass2.root
+/data/atlas/users/orsosa/eg2_data_ct/Pb-thinD2/41996/ct_41996_06.pass2.root
+/data/atlas/users/orsosa/eg2_data_ct/Pb-thinD2/41996/ct_41996_23.pass2.root
+/data/atlas/users/orsosa/eg2_data_ct/Pb-thinD2/41996/ct_41996_12.pass2.root
+/data/atlas/users/orsosa/eg2_data_ct/Pb-thinD2/41996/ct_41996_04.pass2.root
+/data/atlas/users/orsosa/eg2_data_ct/Pb-thinD2/41996/ct_41996_18.pass2.root
+/data/atlas/users/orsosa/eg2_data_ct/Pb-thinD2/41996/ct_41996_22.pass2.root
+/data/atlas/users/orsosa/eg2_data_ct/Pb-thinD2/41996/ct_41996_05.pass2.root
+/data/atlas/users/orsosa/eg2_data_ct/Pb-thinD2/41996/ct_41996_08.pass2.root
+/data/atlas/users/orsosa/eg2_data_ct/Pb-thinD2/41996/ct_41996_03.pass2.root
+/data/atlas/users/orsosa/eg2_data_ct/Pb-thinD2/41996/ct_41996_10.pass2.root
+/data/atlas/users/orsosa/eg2_data_ct/Pb-thinD2/41996/ct_41996_07.pass2.root
+/data/atlas/users/orsosa/eg2_data_ct/Pb-thinD2/41996/ct_41996_00.pass2.root
+/data/atlas/users/orsosa/eg2_data_ct/Pb-thinD2/41996/ct_41996_02.pass2.root

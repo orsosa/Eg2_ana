@@ -1,0 +1,94 @@
+{
+//=========Macro generated from canvas: c/c
+//=========  (Wed May 10 11:13:12 2017) by ROOT version5.34/34
+   TCanvas *c = new TCanvas("c", "c",0,0,1200,900);
+   c->SetHighLightColor(2);
+   c->Range(-0.9858439,-1.117922,0.9858439,1.117922);
+   TView *view = TView::CreateView(1);
+   view->SetRange(0.3,0,0,1,1.5,12.09912);
+   c->SetFillColor(0);
+   c->SetBorderMode(0);
+   c->SetBorderSize(2);
+   c->SetGridx();
+   c->SetGridy();
+   c->SetFrameBorderMode(0);
+   Double_t xAxis1[2] = {0.3, 1}; 
+   Double_t yAxis1[7] = {0, 0.1, 0.25, 0.4, 0.55, 0.75, 1.5}; 
+   
+   TH2F *hMRatio = new TH2F("hMRatio","Multiplicity ratio",1, xAxis1,6, yAxis1);
+   hMRatio->SetBinContent(19,10.97426);
+   hMRatio->SetBinContent(22,22.11649);
+   hMRatio->SetBinError(19,0.007138103);
+   hMRatio->SetBinError(22,0.00723125);
+   hMRatio->SetEntries(54);
+   hMRatio->SetContour(20);
+   hMRatio->SetContourLevel(0,0);
+   hMRatio->SetContourLevel(1,0.548713);
+   hMRatio->SetContourLevel(2,1.097426);
+   hMRatio->SetContourLevel(3,1.646139);
+   hMRatio->SetContourLevel(4,2.194852);
+   hMRatio->SetContourLevel(5,2.743565);
+   hMRatio->SetContourLevel(6,3.292278);
+   hMRatio->SetContourLevel(7,3.840991);
+   hMRatio->SetContourLevel(8,4.389704);
+   hMRatio->SetContourLevel(9,4.938417);
+   hMRatio->SetContourLevel(10,5.48713);
+   hMRatio->SetContourLevel(11,6.035843);
+   hMRatio->SetContourLevel(12,6.584556);
+   hMRatio->SetContourLevel(13,7.133269);
+   hMRatio->SetContourLevel(14,7.681982);
+   hMRatio->SetContourLevel(15,8.230695);
+   hMRatio->SetContourLevel(16,8.779408);
+   hMRatio->SetContourLevel(17,9.32812);
+   hMRatio->SetContourLevel(18,9.876833);
+   hMRatio->SetContourLevel(19,10.42555);
+   
+   TPaveStats *ptstats = new TPaveStats(0.78,0.695,0.98,0.935,"brNDC");
+   ptstats->SetName("stats");
+   ptstats->SetBorderSize(1);
+   ptstats->SetFillColor(0);
+   ptstats->SetTextAlign(12);
+   ptstats->SetTextFont(42);
+   TText *text = ptstats->AddText("hMRatio");
+   text->SetTextSize(0.0368);
+   text = ptstats->AddText("Entries = 54     ");
+   text = ptstats->AddText("Mean x =   0.65");
+   text = ptstats->AddText("Mean y =  1.165");
+   text = ptstats->AddText("RMS x =      0");
+   text = ptstats->AddText("RMS y =      0");
+   ptstats->SetOptStat(1111);
+   ptstats->SetOptFit(0);
+   ptstats->Draw();
+   hMRatio->GetListOfFunctions()->Add(ptstats);
+   ptstats->SetParent(hMRatio);
+
+   Int_t ci;      // for color index setting
+   TColor *color; // for color definition with alpha
+   ci = TColor::GetColor("#000099");
+   hMRatio->SetLineColor(ci);
+   hMRatio->GetXaxis()->SetLabelFont(42);
+   hMRatio->GetXaxis()->SetLabelSize(0.035);
+   hMRatio->GetXaxis()->SetTitleSize(0.035);
+   hMRatio->GetXaxis()->SetTitleFont(42);
+   hMRatio->GetYaxis()->SetLabelFont(42);
+   hMRatio->GetYaxis()->SetLabelSize(0.035);
+   hMRatio->GetYaxis()->SetTitleSize(0.035);
+   hMRatio->GetYaxis()->SetTitleFont(42);
+   hMRatio->GetZaxis()->SetLabelFont(42);
+   hMRatio->GetZaxis()->SetLabelSize(0.035);
+   hMRatio->GetZaxis()->SetTitleSize(0.035);
+   hMRatio->GetZaxis()->SetTitleFont(42);
+   hMRatio->Draw("lego2");
+   
+   TPaveText *pt = new TPaveText(0.3461873,0.9358257,0.6538127,0.995,"blNDC");
+   pt->SetName("title");
+   pt->SetBorderSize(0);
+   pt->SetFillColor(0);
+   pt->SetFillStyle(0);
+   pt->SetTextFont(42);
+   text = pt->AddText("Multiplicity ratio");
+   pt->Draw();
+   c->Modified();
+   c->cd();
+   c->SetSelected(c);
+}

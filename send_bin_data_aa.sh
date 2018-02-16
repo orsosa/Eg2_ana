@@ -1,5 +1,8 @@
 #!/bin/bash
-outdir=ZQ2NuPt2eta_aa_fullrange_UML/data
+outdir=ZQ2NuPt2eta_aa_fullrange_UML_fullRange/data
+#outdir=ZQ2NuPt2eta_aa_fullrange_UML_widthfix/data
+#outdir=ZQ2NuPt2eta_aa_fullrange_UML/data
+#outdir=Pt2Q2NuZeta_aa_fullrange_UML/data
 #xargs -L 1 -0 qsub bin_data_aa_qsub.sh -F "{}"<<eof
 #C  ${outdir}
 #C  $outdir -l
@@ -8,6 +11,7 @@ outdir=ZQ2NuPt2eta_aa_fullrange_UML/data
 #Fe $outdir
 #Fe $outdir -l
 #eof
+
 qsub -F "C  ${outdir}"     bin_data_aa_qsub.sh
 qsub -F "C  ${outdir} -l"  bin_data_aa_qsub.sh
 qsub -F "Pb  ${outdir}"    bin_data_aa_qsub.sh

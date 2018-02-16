@@ -1,0 +1,5 @@
+#parameters for fitting.
+#threshold function parameters
+0 [2]*TMath::Gaus(x,[0],[1]) 0.130  0.1 0.0
+3 [2]*TMath::Gaus(x,[0],[1]) 0.550  0.2 0.001
+0 [3]*TMath::LogNormal(x,[0],[1],[2]) 0.2 0.1 1.0 0.004

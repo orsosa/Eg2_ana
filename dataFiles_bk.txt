@@ -1,0 +1,4 @@
+/data/user/o/orsosa/eg2data/Iron/Clas/clas_41447_00.pass2.root
+/data/user/o/orsosa/eg2data/Iron/Clas/clas_41447_01.pass2.root
+/data/user/o/orsosa/eg2data/Iron/Clas/clas_41447_09.pass2.root
+/data/user/o/orsosa/eg2data/Iron/Clas/clas_41447_11.pass2.root

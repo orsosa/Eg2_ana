@@ -88,9 +88,11 @@ class Combo
 {
 public:
   std::vector<Particle*> kParticles;
+  static const Float_t kQ2Tol=0.3,kNuTol=0.3;
   int Npart;
-  Float_t lastEvent;
-  Combo(): Npart(0),lastEvent(0){}
+  Float_t lastEvent,kQ2,kNu;
+  TLorentzVector *q4; // virtual photon 4th vector.
+  Combo(): Npart(0),lastEvent(0),kQ2(0),kNu(0),q4(0){}
   
   Combo(Combo &c)
   {
@@ -98,8 +100,10 @@ public:
     for (int k=0;k<c.Npart;k++)
     {
       addParticle(c.kParticles[k]);
-      lastEvent=c.lastEvent;
     }
+    lastEvent=c.lastEvent;
+    kQ2=c.kQ2;
+    kNu=c.kNu;
   }
   inline  Double_t Px(){return getSum().Px();}
   inline  Double_t Py(){return getSum().Py();}
@@ -116,6 +120,7 @@ public:
     //    std::cout<<"Combo destructor called: "<<kParticles.size()<<"\n";
     //for (int k=0;k< kParticles.size();k++)
     // delete kParticles[k];
+    delete q4;
     clear();
   }
   void clear(){ kParticles.clear();Npart=0;}
@@ -127,11 +132,25 @@ public:
       kParticles[k]->Boost(-p->BoostVector());
   }
 
-  int addParticle(Particle *p,Float_t ev=0)
+  int addParticle(Particle *p,Float_t ev=0,Bool_t rotfirst=kFALSE)
   {
     Npart++;
     kParticles.push_back(p);
     lastEvent=ev;
+    if (Npart==1)
+    {
+      kQ2= Q2; // using global variable, must be changed!.
+      kNu= Nu; // using global variable, must be changed!.
+      q4 = new TLorentzVector(-Pex,-Pey,kEbeam-Pez,kEbeam-Ee);
+    }
+    else if (rotfirst)
+    {
+      TLorentzVector *q4n = new TLorentzVector(-Pex,-Pey,kEbeam-Pez,kEbeam-Ee);
+      Double_t Dth = q4->Theta() - q4n->Theta();
+      Double_t Dphi = q4->Phi() - q4n->Phi();
+      p->SetTheta(p->Theta()+Dth);
+      p->SetPhi(p->Phi()+Dphi);
+    }
     return Npart;
   }
 
@@ -155,6 +174,16 @@ public:
 	ret++;
     return ret;
   }
+
+  Bool_t isCompatible()
+  {
+    /////// using global variables, must be changed!
+    if ( !( (-kQ2Tol< (kQ2 - Q2) && (kQ2 - Q2) < kQ2Tol) && (-kNuTol< (kNu - Nu) && (kNu - Nu) < kNuTol) ) )
+      return kFALSE;
+
+    return kTRUE;
+  }
+
 
   
   inline Particle* operator [] (const int & i) const
@@ -219,6 +248,7 @@ public:
   std::vector <Combo *> *kCombo;//partial combinations.
   std::vector <Combo *> kBkgnd;//background combinations.
 
+  static const Int_t kBUFFLIMIT=100;
 
   std::vector<TH1F*> hSPid;
   TFile *kOutFile;
@@ -682,7 +712,9 @@ public:
       {
 	//std::cout<<__LINE__<<" "<<findSecondary()<<std::endl;
 	Particle *p = new Particle(Px,Py,Pz,Ep,vx,vy,vz,pid);
+	
 	push_bkgnd(p);
+	
 	findSecondary();
       }
       else
@@ -699,7 +731,6 @@ public:
 
 	    Npart*=kCombo[k].size();
 	  }
-
 	  for(int k=0;k<Npart;k++)
 	  {
 	    kPrimary = new Combo();
@@ -708,7 +739,6 @@ public:
 	    {
 	      int size = kCombo[l].size();
 	      //std::cout<<__LINE__<<": \n";
-	      
 	      *kPrimary+=*kCombo[l][ (k/div)%size ];
 	      //std::cout<<__LINE__<<": \n";
 
@@ -724,7 +754,6 @@ public:
 	Particle *p =new Particle(Px,Py,Pz,Ep,vx,vy,vz,pid);
 	push_bkgnd(p);
 	findSecondary();
-
       }
       std::cout<<setw(15)<<float(i+1)/Ne*100<<" %"<<"\r";
       std::cout.flush();
@@ -734,16 +763,16 @@ public:
 
   int push_bkgnd(Particle *p)
   {
-    if (isPid(p->pid))
+    if (isPid(p->pid) &&  kBkgnd.size() < kBUFFLIMIT)
     { 
       if (!kBkgnd.empty())
       {
 	int i;
 	for (i =0;i<kBkgnd.size();i++)
 	{
-	  if ((kBkgnd[i]->findPid(p->pid)<kNSPid[p->pid] ) && (kBkgnd[i]->lastEvent!=evnt))
+	  if ( (kBkgnd[i]->findPid(p->pid)<kNSPid[p->pid] ) && (kBkgnd[i]->lastEvent!=evnt) && (kBkgnd[i]->isCompatible()) )
 	  {
-	    kBkgnd[i]->addParticle(p,evnt);
+	    kBkgnd[i]->addParticle(p,evnt,kTRUE);
 	    break;
 	  }
 	  
@@ -992,21 +1021,24 @@ int main(int argc, char *argv[])
   r.addSecondary("pi-");
   */
 
-  /*    
+      
   //eta -> a a pi+ pi-
-  Reaction r("eta -> a a pi+ pi-","etaout_all.root",false);
+  Reaction r("eta -> a a pi+ pi-","etaout_3pi_all.root",false);
   r.addPrimary("eta");
   r.addSecondary("gamma");
   r.addSecondary("gamma");
   r.addSecondary("pi+");
   r.addSecondary("pi-");
-  */
+  
 
+  /*
   //eta -> a a
-  Reaction r("eta -> a a","etaout_aa_all.root",false);
+  Reaction r("eta -> a a","etaout_aa_all_bkg.root",false);
   r.addPrimary("eta");
   r.addSecondary("gamma");
   r.addSecondary("gamma");  
+  */
+
 
   /*
  //eta -> 3pi0 -> 6a 
@@ -1046,6 +1078,7 @@ int main(int argc, char *argv[])
   r.store();
   std::cout<<"\n";
   r.kOutData->Print();
+  r.kOutBkgnd->Print();
   corrfile->Close();
   bm->Show("get_pi0");
   return 0;  

@@ -1,0 +1,28 @@
+<Request>
+  <Project name="eg2a"/>
+  <Name name="iron"/>
+  <Track name="analysis"/>
+  <Memory space="200" unit="MB"/>
+  <DiskSpace space="400" unit="MB"/>
+  <Email email="osoto@jlab.org" request="true" job="true"/>
+  <Variable name="mssprefix" value="mss:/mss/clas/eg2a/production/Pass2/Clas"/>
+  <Variable name="osoto_store" value="file:/volatile/clas/claseg2/osoto/Iron"/>
+  <Variable name="osoto_home" value="file:/home/osoto"/>
+  <Command>
+    <![CDATA[./get_simple_tuple
+    ]]>
+  </Command>
+  <Input src="${osoto_home}/osoto_ana/get_simple_tuple" dest="get_simple_tuple"/>
+  <List name="infile">
+ESO
+ES 
+Todo
+  </List>
+  <ForEach list="infile">
+    <Job>
+    <Input src="${mssprefix}/${infile}" dest="${infile}"/>
+    <Output src="pion_data.root" dest="${osoto_store}/cutted_${infile}"/>
+    </Job>
+  </ForEach>
+</Request>
+

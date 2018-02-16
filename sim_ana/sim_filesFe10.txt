@@ -1,0 +1,10 @@
+/data/atlas/users/alaoui/mc_prod/newsimul4_bat/32bit/Fe56/run0001/recsis_Fe56_run0001.root
+/data/atlas/users/alaoui/mc_prod/newsimul4_bat/32bit/Fe56/run0002/recsis_Fe56_run0002.root
+/data/atlas/users/alaoui/mc_prod/newsimul4_bat/32bit/Fe56/run0003/recsis_Fe56_run0003.root
+/data/atlas/users/alaoui/mc_prod/newsimul4_bat/32bit/Fe56/run0004/recsis_Fe56_run0004.root
+/data/atlas/users/alaoui/mc_prod/newsimul4_bat/32bit/Fe56/run0005/recsis_Fe56_run0005.root
+/data/atlas/users/alaoui/mc_prod/newsimul4_bat/32bit/Fe56/run0006/recsis_Fe56_run0006.root
+/data/atlas/users/alaoui/mc_prod/newsimul4_bat/32bit/Fe56/run0007/recsis_Fe56_run0007.root
+/data/atlas/users/alaoui/mc_prod/newsimul4_bat/32bit/Fe56/run0008/recsis_Fe56_run0008.root
+/data/atlas/users/alaoui/mc_prod/newsimul4_bat/32bit/Fe56/run0009/recsis_Fe56_run0009.root
+/data/atlas/users/alaoui/mc_prod/newsimul4_bat/32bit/Fe56/run0010/recsis_Fe56_run0010.root

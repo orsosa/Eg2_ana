@@ -1,0 +1,136 @@
+{
+//=========Macro generated from canvas: c/The canvas
+//=========  (Tue Dec 20 13:48:39 2016) by ROOT version5.34/19
+   TCanvas *c = new TCanvas("c", "The canvas",1,1,800,576);
+   c->SetHighLightColor(2);
+   c->Range(0.425,-50.1444,0.675,451.2996);
+   c->SetFillColor(0);
+   c->SetBorderMode(0);
+   c->SetBorderSize(2);
+   c->SetFrameBorderMode(0);
+   c->SetFrameBorderMode(0);
+   
+   TH1F *hM = new TH1F("hM","Mass, bin (q2,nu,z) = (1,0,1)",75,0.45,0.65);
+   hM->SetBinContent(0,12144);
+   hM->SetBinContent(1,363);
+   hM->SetBinContent(2,282);
+   hM->SetBinContent(3,310);
+   hM->SetBinContent(4,347);
+   hM->SetBinContent(5,286);
+   hM->SetBinContent(6,291);
+   hM->SetBinContent(7,346);
+   hM->SetBinContent(8,314);
+   hM->SetBinContent(9,320);
+   hM->SetBinContent(10,321);
+   hM->SetBinContent(11,326);
+   hM->SetBinContent(12,341);
+   hM->SetBinContent(13,329);
+   hM->SetBinContent(14,292);
+   hM->SetBinContent(15,256);
+   hM->SetBinContent(16,263);
+   hM->SetBinContent(17,292);
+   hM->SetBinContent(18,263);
+   hM->SetBinContent(19,259);
+   hM->SetBinContent(20,238);
+   hM->SetBinContent(21,233);
+   hM->SetBinContent(22,234);
+   hM->SetBinContent(23,216);
+   hM->SetBinContent(24,218);
+   hM->SetBinContent(25,195);
+   hM->SetBinContent(26,242);
+   hM->SetBinContent(27,185);
+   hM->SetBinContent(28,152);
+   hM->SetBinContent(29,162);
+   hM->SetBinContent(30,184);
+   hM->SetBinContent(31,161);
+   hM->SetBinContent(32,138);
+   hM->SetBinContent(33,155);
+   hM->SetBinContent(34,122);
+   hM->SetBinContent(35,122);
+   hM->SetBinContent(36,128);
+   hM->SetBinContent(37,112);
+   hM->SetBinContent(38,102);
+   hM->SetBinContent(39,76);
+   hM->SetBinContent(40,92);
+   hM->SetBinContent(41,22);
+   hM->SetEntries(21434);
+   
+   TPaveStats *ptstats = new TPaveStats(0.78,0.775,0.98,0.935,"brNDC");
+   ptstats->SetName("stats");
+   ptstats->SetBorderSize(1);
+   ptstats->SetFillColor(0);
+   ptstats->SetTextAlign(12);
+   ptstats->SetTextFont(42);
+   TText *text = ptstats->AddText("hM");
+   text->SetTextSize(0.0368);
+   text = ptstats->AddText("Entries = 21434  ");
+   text = ptstats->AddText("Mean  = 0.4931");
+   text = ptstats->AddText("RMS   = 0.02824");
+   ptstats->SetOptStat(1111);
+   ptstats->SetOptFit(0);
+   ptstats->Draw();
+   hM->GetListOfFunctions()->Add(ptstats);
+   ptstats->SetParent(hM);
+   
+   TF1 *fmb = new TF1("fmb","pol2",0.45,0.65);
+   fmb->SetFillColor(19);
+   fmb->SetFillStyle(0);
+   fmb->SetLineColor(2);
+   fmb->SetLineWidth(2);
+   fmb->SetChisquare(111.5054);
+   fmb->SetNDF(38);
+   fmb->GetXaxis()->SetLabelFont(42);
+   fmb->GetXaxis()->SetLabelSize(0.035);
+   fmb->GetXaxis()->SetTitleSize(0.035);
+   fmb->GetXaxis()->SetTitleFont(42);
+   fmb->GetYaxis()->SetLabelFont(42);
+   fmb->GetYaxis()->SetLabelSize(0.035);
+   fmb->GetYaxis()->SetTitleSize(0.035);
+   fmb->GetYaxis()->SetTitleFont(42);
+   fmb->SetParameter(0,-4093.37);
+   fmb->SetParError(0,574.7925);
+   fmb->SetParLimits(0,0,0);
+   fmb->SetParameter(1,19859.84);
+   fmb->SetParError(1,2250.749);
+   fmb->SetParLimits(1,0,0);
+   fmb->SetParameter(2,-22314.12);
+   fmb->SetParError(2,2195.399);
+   fmb->SetParLimits(2,0,0);
+   hM->GetListOfFunctions()->Add(fmb);
+
+   Int_t ci;      // for color index setting
+   TColor *color; // for color definition with alpha
+   ci = TColor::GetColor("#000099");
+   hM->SetLineColor(ci);
+
+   ci = TColor::GetColor("#0000ff");
+   hM->SetMarkerColor(ci);
+   hM->SetMarkerStyle(24);
+   hM->GetXaxis()->SetTitle("M_{#gamma#gamma} (GeV)");
+   hM->GetXaxis()->SetLabelFont(42);
+   hM->GetXaxis()->SetLabelSize(0.035);
+   hM->GetXaxis()->SetTitleSize(0.035);
+   hM->GetXaxis()->SetTitleFont(42);
+   hM->GetYaxis()->SetTitle("dN/dM (GeV)");
+   hM->GetYaxis()->SetLabelFont(42);
+   hM->GetYaxis()->SetLabelSize(0.035);
+   hM->GetYaxis()->SetTitleSize(0.035);
+   hM->GetYaxis()->SetTitleFont(42);
+   hM->GetZaxis()->SetLabelFont(42);
+   hM->GetZaxis()->SetLabelSize(0.035);
+   hM->GetZaxis()->SetTitleSize(0.035);
+   hM->GetZaxis()->SetTitleFont(42);
+   hM->Draw("e");
+   
+   TPaveText *pt = new TPaveText(0.2544472,0.9341608,0.7455528,0.995,"blNDC");
+   pt->SetName("title");
+   pt->SetBorderSize(0);
+   pt->SetFillColor(0);
+   pt->SetFillStyle(0);
+   pt->SetTextFont(42);
+   text = pt->AddText("Mass, bin (q2,nu,z) = (1,0,1)");
+   pt->Draw();
+   c->Modified();
+   c->cd();
+   c->SetSelected(c);
+}

@@ -1,0 +1,86 @@
+\documentclass[12pt,letterpaper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\usepackage{tcolorbox}
+\author{Orlando Soto}
+
+\usepackage{epstopdf}	% Included EPS files automatically converted to PDF to include with pdflatex
+%\epstopdfsetup{update}
+\epstopdfDeclareGraphicsRule
+{.gif}{png}{.png}{convert #1 \OutputFile}
+%%{.gif}{png}{.png}{C:/"Program Files"/ImageMagick-6.8.0-Q16/convert.exe #1 \OutputFile} %windows
+\DeclareGraphicsExtensions{.pdf, .jpeg, .jpg, .gif, .png}
+\graphicspath{{.}}	% Root directory of the pictures 
+
+
+\begin{document}
+Consider the reconstruction of the position of the vertex of an interaction.
+\begin{itemize}
+\item If the target were just a point, of infinitesimal volume, this position will be reconstructed as a Gaussian function, due to the big number of random variables that are being summed (central limit theorem).
+\item In reality the target doesn't has differential volume, then it doesn't has differential dimensions.
+\end{itemize}
+The reconstructed position will be then a Gaussian convoluted with the spatial function describing the target.
+
+Let's focus on z position. Let be $f_t(z)$ the function that describes the target spatial function, $f_m(z)$ the function that describes the procedure of measurement and $v(z)$ the reconstructed vertex function $v(z) = f_t \star f_m$.
+
+first point:
+\begin{align}
+f_t(z) &= \delta (z-m) \label{tf_1}\\
+f_m(z) &= \frac{1}{\sqrt{2\sigma^2}}e^{\frac{-z^2}{2\sigma^2}}\label{mf_1}
+\end{align}
+\begin{align}
+v(z) &= \int_{-\infty}^{\infty} f_t(z-t)f_m(t)dt\label{rvf_1}\\
+v(z) &= \int_{-\infty}^{\infty} \delta(z-t-m)f_m(t)dt\\
+v(z) &= f_m(z-m) = \frac{1}{\sqrt{2\sigma^2}}e^{\frac{-(z-m)^2}{2\sigma^2}}\\
+\end{align}
+
+Considering the real target as a step function:
+\begin{equation}
+f_t(z) = \left\lbrace\begin{matrix}
+1,~~~|z-m|<\frac{w}{2}\\
+0,~~~ o.w.
+\end{matrix}\right. \label{tf_2}
+\end{equation}
+using \eqref{rvf_1} and \eqref{tf_2}.
+\begin{align}
+v(z) &= \int_{-\infty}^{\infty} f_t(z-t)f_m(t)dt\label{rvf_2}\\
+v(z) &= \int_{m-z-w/2}^{m-z+w/2} f_m(t)dt\\
+v(z) &= \int_{m-z-w/2}^{m-z+w/2} \frac{1}{\sqrt{2\sigma^2}}e^{\frac{-t^2}{2\sigma^2}}dt\label{vz_2b}
+\end{align}
+
+considering the function $erf$
+
+\begin{equation}
+erf(t) = \frac{2}{\sqrt{\pi}}\int_0^t e^{-x^2}dx \label{erf}
+\end{equation}
+using \eqref{erf} and \eqref{vz_2b}:
+%
+\begin{equation}
+v(z) = \frac{1}{2}\left(erf(\frac{m-z+w/2}{\sqrt{2}\sigma} ) - erf(\frac{m-z-w/2}{\sqrt{2}\sigma} )\right)
+\end{equation}
+Adding a second order polynomial and fitting on Carbon and Deuterium events gives:
+%
+\begin{figure}[!ht]
+\includegraphics[width=0.9\textwidth]{CD_D_fit_pol2.gif}
+\caption{Fitting on Deuterium target using C and D2 data.}
+\end{figure}
+%
+\begin{figure}[!hb]
+\includegraphics[width=0.9\textwidth]{CD_C_fit_pol2.gif}
+\caption{Fitting on Carbon target using C and D2 data.}
+\end{figure}
+%
+As expected, the dispersion due to vertex measurement ($\sigma$ on $f_m(z)$) are very close considering the estimations using each of the targets.
+
+\tcbox{
+D2: $\sigma = 0.2093$
+
+
+C: $\sigma= 0.2065$
+}
+
+\end{document}

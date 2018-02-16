@@ -18,6 +18,8 @@
 #include "TStyle.h"
 #include "TCut.h"
 #include "TString.h"
+#include "TH1F.h"
+#include "THStack.h"
 #include <string>
 #include <iostream>
 #include <sstream>
@@ -44,7 +46,9 @@ int main(int argc, char *argv[])
 {
   get_bin_info();
   parse_opt(argc,argv);
+  
   TCanvas *c = new TCanvas("c","c",1200,900);
+  
   c->SetGrid();
 
   if (outdir.IsNull())  outdir.Append("MRatio");
@@ -57,16 +61,38 @@ int main(int argc, char *argv[])
   if (dataLTfile.IsNull())  dataLTfile.Append(Form("%s/data_%sD_D/binned.root",indir.Data(),st.Data()));
   if (dataSTfile.IsNull())  dataSTfile.Append(Form("%s/data_%sD_%s/binned.root",indir.Data(),st.Data(),st.Data()));
 
-  if (dataElecfile.IsNull())  dataElecfile.Append( Form("Ne_TargConf.root") );
+  if (dataElecfile.IsNull())  dataElecfile.Append( Form("/user/o/orsosa/osoto_ana/Ne_TargConf.root") );
+
+  TFile *outf;
+  THStack *allratios;
+
+  struct stat sb;
+  if (stat(Form("%s.root",outdir.Data()), &sb) != 0)
+  {
+    std::cout<<"File: "<<outdir.Data()<<".root doesn't exist. creating...\n";
+    outf = new TFile(outdir + ".root","recreate");
+    allratios = new THStack();
+  }
+  else
+  {
+    outf = new TFile(outdir + ".root","update");
+    allratios = (THStack *)outf->Get("allratios");
+  }
+  Color_t histcolor=0;
+  TString histname="";
+  if (st=="C") {histcolor=kRed;histname="hMR_C";}
+  if (st=="Fe") {histcolor=kBlue;histname="hMR_Fe";}
+  if (st=="Pb") {histcolor=kBlack;histname="hMR_Pb";}
 
   //  if (st.IsNull()) st.Append("C");
   outdir.Append(st.Data());
-  struct stat sb;
+
   if (stat(outdir.Data(), &sb) != 0)
   {
     std::cout<<"Folder: "<<outdir.Data()<<" doesn't exist. creating...\n";
     system(Form("mkdir %s",outdir.Data()));
   }
+  
 
   std::cout<<"########\nliquid sim rec file: "<<srLTfile.Data()<<" gsim file: "<<gsLTfile.Data()<<"\n##########\n";
   std::cout<<"########\nsolid sim rec file: "<<srSTfile.Data()<<" gsim file: "<<gsSTfile.Data()<<"\n##########\n";
@@ -202,7 +228,7 @@ int main(int argc, char *argv[])
     nbgST = tg1sST->Draw(draw_text.Data(),"","goffcandle");
   }
 
-  draw_text.Append(":(mbr_err*mbr_err/mbratio/mbratio)");
+  draw_text.Append(":(mbr_err*mbr_err)");
   //  draw_text.Append(":(mbr_err*mbr_err/mbratio/mbratio)");
   std::cout<< draw_text<<std::endl;
   //tdsLT->Print();
@@ -249,8 +275,11 @@ int main(int argc, char *argv[])
     hMRatio->SetBinError(hMRatio->FindBin(tdsST->GetVal(1)[i],tdsST->GetVal(2)[i]),sigMR);
     Float_t mbrST_e2N = tdsST->GetVal(NFold+1)[i];
     Float_t mbrLT_e2N = tdsLT->GetVal(NFold+1)[i];
+    //    hsigUp ->Fill(tdsST->GetVal(NFold)[i] ,1./NhST +  sigAccST*sigAccST/accST/accST + mbrST_e2N);
+    //hsigDown ->Fill(tdsLT->GetVal(NFold-1)[i] ,1./NhLT + sigAccLT*sigAccLT/accLT/accLT + mbrLT_e2N);
+
     hsigUp ->Fill(tdsST->GetVal(NFold)[i] ,1./NhST +  sigAccST*sigAccST/accST/accST + mbrST_e2N);
-    hsigDown ->Fill(tdsLT->GetVal(NFold-1)[i] ,1./NhLT + sigAccLT*sigAccLT/accLT/accLT + mbrLT_e2N);
+    hsigDown ->Fill(tdsLT->GetVal(NFold)[i] ,1./NhLT + sigAccLT*sigAccLT/accLT/accLT + mbrLT_e2N);
 
     hNhST ->Fill(tdsST->GetVal(NFold)[i],NhST/accST);
     hNhLT ->Fill(tdsLT->GetVal(NFold)[i],NhLT/accLT);
@@ -298,9 +327,19 @@ int main(int argc, char *argv[])
     hMRatioProj->GetYaxis()->SetTitleOffset(1.1);
     hMRatioProj->Draw("ep");
 
+    hMRatioProj->SetMarkerColor(histcolor);
+    hMRatioProj->SetLineColor(histcolor);
+    hMRatioProj->SetMarkerStyle(kFullDotLarge);
+    hMRatioProj->SetName(histname);
+    hMRatioProj->SetTitle(histname);
+    allratios->Add(hMRatioProj);
+    allratios->Print();
+
     c->SaveAs(Form("%s/hMRatio1d_%s_%s.gif",outdir.Data(),BinName[binorder.back()],suffix.Data()));
     c->SaveAs(Form("%s/hMRatio1d_%s_%s.C",outdir.Data(),BinName[binorder.back()],suffix.Data()));
-
+    outf->cd();
+    allratios->Write("allratios",TObject::kOverwrite);
+    outf->Close();
 
   return 0;
 }

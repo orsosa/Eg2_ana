@@ -27,11 +27,15 @@
 #include <unistd.h>
 #include "TEllipse.h"
 #include "RooGaussian.h"
+#include "RooLandau.h"
+#include "RooFFTConvPdf.h"
 #include "RooRealVar.h"
 #include "RooFormulaVar.h"
 #include "RooConstVar.h"
 #include "RooPolynomial.h"
 #include "RooChebychev.h"
+#include "RooExponential.h"
+#include "RooBreitWigner.h"
 #include "RooDataHist.h"
 #include "RooDataSet.h"
 #include "RooFitResult.h"
@@ -53,7 +57,6 @@ TH2F *hEpi0_th;
 Float_t kMPi0=5.39609e-01;
 Float_t kSPi0=5.98542e-02;
 
-
 Float_t kPt2,kEvent; 
 TNtuple *tuple1, *tuple2, *tuple1s, *tuple2s, *pt1, *pt2, *tupleElec;
 TF1 *fmb, *fpeak, *fsig;
@@ -68,7 +71,6 @@ bool sim=false;
 Int_t *NEdges, NbinM=100;
 Char_t **BinName=NULL;
 Float_t **BinEdges=NULL;
-
 
 #define len(x) sizeof(x)/sizeof(x[0])
 
@@ -88,21 +90,16 @@ int main(int argc, char *argv[])
 
   if(sim)
   {
-    kMPi0=1.33196e-1;//Got sim rec.
+    kMPi0=5.472e-1;//Got sim rec.
     kSPi0=1.94034e-2;//Got sim rec.
     NbinM=200;
-    //kMPi0=5.5e-1;//Got sim rec.
-    //kSPi0=1.94034e-2;//Got sim rec.
-    //NbinM=200;
   }
   else if(gsim)
   {
-    kMPi0= 0.135;//Got from sim.
+
+    kMPi0= 0.5472;//Got from sim.
     kSPi0= 0.00066297;//Got from sim.
     NbinM=1e4;
-    //kMPi0= 0.55;//Got from sim.
-    //kSPi0= 0.00066297;//Got from sim.
-    //NbinM=1e4;
 
   }
   /*  else
@@ -145,7 +142,7 @@ int main(int argc, char *argv[])
 
   TFile * f  = new TFile(infile.Data(), "read");
   //  TFile * f2 = new TFile("local/prune_simul.root","read"); //To get GSIM
-  c  = new TCanvas("c", "The canvas",800,600);
+  c  = new TCanvas("c", "The canvas",920,690);
   if (gsim) c->SetLogy();
   TTree *t = (TTree *) f->Get("outdata");
   if (gsim) t->SetEstimate(10e6);
@@ -157,10 +154,16 @@ int main(int argc, char *argv[])
 
   ///////////////// MASS PLOT RANGE ///////////////////////////////////
 
-  Float_t minRange,maxRange,Nit=1;
-  minRange = 0.2, maxRange = 0.8;
-  Float_t rangeFit[2]={.35,.75};
-  //Float_t minRange = 0.74, maxRange = 0.82;
+  Float_t minRange,maxRange,Nit=1,rangeFit[2];
+  minRange = 0.2, maxRange = 0.8; ///// range of plots.
+  //
+  if(gsim)
+    {rangeFit[0]=0.48; rangeFit[1]=.62;}//only eta fit
+  else
+    {rangeFit[0]=0.35; rangeFit[1]=.75; }//only eta  fit
+  //{rangeFit[0]=0.05; rangeFit[1]=.75;} //full range  fit
+  
+  //Float_t minRange = 0.74, maxRange = 0.82; // omega fit
   ////////////////////////////////////////////////////////////////
 
   fmb = new TF1("fmb","pol2",minRange,maxRange);
@@ -230,118 +233,21 @@ int main(int argc, char *argv[])
     
   tuple1s = new TNtuple("Amp_binned",Form("amplitude with mb ratio %s",BinSchema.Data()),branch.Data() );
 
-  //tupleElec = new TNtuple("Elec_binned",Form("electron data with bin info (Q2,Nu,W)"),"Q2:Nu:W:Ee:Pex:Pey:Pez:event" );
-
   Float_t *t1sData = new Float_t[tuple1s->GetNvar()];
-  //  std::cout<<BinSchema.Data()<<std::endl;
-  //  tuple2s = new TNtuple("tuple2s","recsim with mb ratio (Nu,z,Pt2)","Nu:Q2:Z:Pt2:amp:bin:binpt2:binnu:binz:mbratio");
+
   Long_t Ne = (Long_t)t->GetEntries();
-  t->SetAlias("Phie",Form("TMath::RadToDeg()*((%sx>0)*(TMath::ATan(%sy/%sx)) + (%sx<=0)*(TMath::ATan(%sy/%sx)+TMath::Pi()))","Pe","Pe","Pe","Pe","Pe","Pe"));
-  t->SetAlias("Phig",Form("TMath::RadToDeg()*((%sx>0)*(TMath::ATan(%sy/%sx)) + (%sx<=0)*(TMath::ATan(%sy/%sx)+TMath::Pi()))","P","P","P","P","P","P"));
-  t->SetAlias("Sectore",Form("(Phi%s>-30)*(int((Phi%s+90)/60) - 1) + (Phi%s<=-30)*(5)","e","e","e"));
-  t->SetAlias("Sectorg",Form("(Phi%s>-30)*(int((Phi%s+90)/60) - 1) + (Phi%s<=-30)*(5)","g","g","g"));
-  t->SetAlias("Eg","TMath::Sqrt(Px*Px+Py*Py+Pz*Pz)");
 
-  t->SetAlias("E1q","TMath::Sqrt(qx1*qx1 + qy1*qy1 + qz1*qz1)");
-  t->SetAlias("E2q","TMath::Sqrt(qx2*qx2 + qy2*qy2 + qz2*qz2)");  
+  ////////////////// SETTING ALIASES /////////
+  set_aliases_aa(t);
+  set_aliases_aa(tb);
+  ////////////////////////////////////////////
 
-  t->SetAlias("cos_alpha","(qx1*qx2 + qy1*qy2 +qz1*qz2 )/E1q/E2q");
-  t->SetAlias("alpha_d","acos(cos_alpha)*TMath::RadToDeg()");
-
-  t->SetAlias("E1tc","E1/(1.129-0.05793/E1 + 1.07e-12/E1/E1)");
-  t->SetAlias("E2tc","E2/(1.129-0.05793/E2 + 1.07e-12/E2/E2)");
-
-  ///new Aliases
-  t->SetAlias("Eeta","fE[0]+fE[1]");
-  t->SetAlias("Pxeta","fX[0]+fX[1]");
-  t->SetAlias("Pyeta","fY[0]+fY[1]");
-  t->SetAlias("Pzeta","fZ[0]+fZ[1]");
-
-  t->SetAlias("meta","TMath::Sqrt(Eeta*Eeta - Pxeta*Pxeta - Pyeta*Pyeta - Pzeta*Pzeta)");
-
-
-  t->SetAlias("p0p1","fE[0]*fE[1] - (fX[0]*fX[1] + fY[0]*fY[1] + fZ[0]*fZ[1])");
-
-  t->SetAlias("meta0","TMath::Sqrt( 2*p0p1 )");
-
-  t->SetAlias("ct","(fX[0]*fX[1] + fY[0]*fY[1] + fZ[0]*fZ[1])/(fE[0]*fE[1])");
-  t->SetAlias("metaT","TMath::Sqrt( 2*fE[0]*fE[1]*(1-ct) )");
-  t->SetAlias("metaT2","2*fE[0]*fE[1]*(1-ct)");
-
-  /// boost.
-  t->SetAlias("bX","Pxeta/Eeta");
-  t->SetAlias("bY","Pyeta/Eeta");
-  t->SetAlias("bZ","Pzeta/Eeta");
-  t->SetAlias("b","TMath::Sqrt(bX*bX + bY*bY + bZ*bZ)");
-  t->SetAlias("g","1.0/TMath::Sqrt(1-b*b)"); 
-  t->SetAlias("bDotr_a0","bX*fX[0] + bY*fY[0] + bZ*fZ[0]");
-  t->SetAlias("bDotr_a1","bX*fX[1] + bY*fY[1] + bZ*fZ[1]");
-
-  t->SetAlias("Ea0_b","g*(fE[0] - bDotr_a0)");
-  t->SetAlias("Ea1_b","g*(fE[1] - bDotr_a1)");
-
-  t->SetAlias("Pxa0_b","fX[0]+(g-1)/(b*b)*(bDotr_a0)*bX - g*fE[0]*bX");
-  t->SetAlias("Pya0_b","fY[0]+(g-1)/(b*b)*(bDotr_a0)*bY - g*fE[0]*bY");
-  t->SetAlias("Pza0_b","fZ[0]+(g-1)/(b*b)*(bDotr_a0)*bZ - g*fE[0]*bZ");
-
-  t->SetAlias("Pxa1_b","fX[1]+(g-1)/(b*b)*(bDotr_a1)*bX - g*fE[1]*bX");
-  t->SetAlias("Pya1_b","fY[1]+(g-1)/(b*b)*(bDotr_a1)*bY - g*fE[1]*bY");
-  t->SetAlias("Pza1_b","fZ[1]+(g-1)/(b*b)*(bDotr_a1)*bZ - g*fE[1]*bZ");
-
-  t->SetAlias("ma0","TMath::Sqrt(fE[0]*fE[0] - fX[0]*fX[0] - fY[0]*fY[0] - fZ[0]*fZ[0])");
-  t->SetAlias("ma1","TMath::Sqrt(fE[1]*fE[1] - fX[1]*fX[1] - fY[1]*fY[1] - fZ[1]*fZ[1])");
-
-  t->SetAlias("ma0_2","fE[0]*fE[0] - fX[0]*fX[0] - fY[0]*fY[0] - fZ[0]*fZ[0]");
-  t->SetAlias("ma1_2","fE[1]*fE[1] - fX[1]*fX[1] - fY[1]*fY[1] - fZ[1]*fZ[1]");
-
-  //  t->SetAlias("xd","Mpi0pip-0.31");
-  //t->SetAlias("yd","Mpi0pip-0.39");
-  //TCut dalitzCut = "xd*xd+yd*yd<0.05*0.05";
-
-  Float_t xc=9.32886e-02,rx= 3.*1.41376e-02,yc=1.16822e-01,ry=3.*2.20606e-02;
-
-  t->SetAlias("xd","Mpi0pim*Mpi0pim");
-  t->SetAlias("yd","Mpi0pip*Mpi0pip");
-
-  t->SetAlias("xd0_rx",Form("(xd-%f)/%f",xc,rx));
-  t->SetAlias("yd0_ry",Form("(yd-%f)/%f",yc,ry));
-
-
-  //  TCut dalitzCut = "xd0_rx*xd0_rx + yd0_ry*yd0_ry<1";
-  TCut dalitzCut = "0<xd&&xd<0.16&&0<yd&&yd<0.3";
-
-
-  t->SetAlias("Tpip","Epip_b-0.13957");
-  t->SetAlias("Tpim","Epim_b-0.13957");
-  t->SetAlias("Tpi0","Epi0_b-mpi0");
-  t->SetAlias("Qeta","Tpip+Tpim+Tpi0");
-  t->SetAlias("X","sqrt(3)*(Tpip-Tpim)/Qeta");
-  t->SetAlias("Y","3*Tpi0/Qeta-1");
-  
-  t->SetAlias("Dm","meta-mpi0-mpip-mpim+0.135+0.140+0.140");
-  t->SetAlias("DDm","meta-mpi0-mpip-mpim+0.135+0.140+0.140");
   TCut pi0cut = "0.1<mpi0&&mpi0<0.18";
-  TCut mrhocut = "0.7<mrho&&mrho<0.85";
-  TCut mK0cut = "0.48<mrho&&mrho<0.51";
-  TCut planecut = "-0.1<crossDot&&crossDot<0.1";
   TCut metacut = "0.52<Dm&&Dm<0.6";
-  TCut momegacut = "0.74<Dm&&Dm<0.82";
 
   TCut ma0cut = "0<=ma0_2&&ma0_2<0.001";
   TCut ma1cut = "0<=ma1_2&&ma1_2<0.001";
 
-
-  ///////////// END new Aliases ///////////////
-
-  if (!strcmp(tt,"Fe") )
-  {
-    t->SetAlias("E1tc","E1/(1.116-0.09213/E1 + 0.01007/E1/E1)");
-    t->SetAlias("E2tc","E2/(1.116-0.09213/E2 + 0.01007/E2/E2)");
-    
-  }
-  t->SetAlias("M_0","TMath::Sqrt(2*E1tc*E2tc*(1.-cos_alpha))"); 
-  if(gsim||sim)
-    t->SetAlias("M_0","TMath::Sqrt(2*E1*E2*(1.-cos_alpha))");
 
   TH1F *hM ;
   TH1F *hM_fine;
@@ -353,16 +259,15 @@ int main(int argc, char *argv[])
   Float_t highE =0;
   TCut cut;
   TCut DIS=Form("(Q2>1.0)&&(W>2)&&(Nu/%f)<0.85",kEbeam);
-  TCut alphamin = "alpha_d>3.2";
   TCut ttcut="1==1";
   
-  if(!gsim&&!sim)
+  if(!gsim)
     ttcut=
     ((!strcmp(tt,"D"))?"-31.8<vzec&&vzec<-28.40":
      ((!strcmp(tt,"Fe"))?"-25.65<vzec&&vzec<-24.26":
       ((!strcmp(tt,"C"))?"-25.33<vzec&&vzec<-24.10":
        ((!strcmp(tt,"Pb"))?"-25.54<vzec&&vzec<-24.36":
-	"true") ) ) );
+	"1==1") ) ) );
   TCut cc;
   ttcut.Print();
   std::cout<<Nbins<<std::endl;
@@ -378,6 +283,7 @@ int main(int argc, char *argv[])
   c->GetPad(2)->SetGrid();
 
   setStyle();
+  std::cout<<__LINE__<<std::endl;
   for (int k = 0;k <Nbins; k++)
   {
     //fmb = new TF1("fmb","pol2",0.0,0.2);
@@ -429,11 +335,12 @@ int main(int argc, char *argv[])
     RooWorkspace *w = new RooWorkspace(Form("w1_%d",k),"RooFit Workspace");
     RooRealVar meta("meta","M(#gamma#gamma)",minRange,maxRange);
 
-    RooDataSet *ds = new RooDataSet("ds","data set",meta);
     TCut rangeCut=Form("%f<meta&&meta<%f",minRange,maxRange);
+
+    /////// Get signal data for the given bin ////////////////
+    RooDataSet *ds = new RooDataSet("ds","data set",meta);
     Int_t size = t->Draw(draw_text.Data(),cut&&DIS&&ttcut&&ma0cut&&ma1cut&&rangeCut,"goffcandle");
     std::cout<<"number of event on bin: "<<size<<std::endl;
-    cut.Clear();
     M=t->GetVal(0);
     Event=t->GetVal(1);
     for (int i=0;i<size;i++)
@@ -453,37 +360,72 @@ int main(int argc, char *argv[])
       ds->add(meta);
     }
 
+/*
+/////// Get background data for the given bin ////////////////
+
+    RooDataSet *ds_bkg = new RooDataSet("ds_bkg","background data set",meta);
+    size = tb->Draw(draw_text.Data(),cut&&DIS&&ttcut&&ma0cut&&ma1cut&&rangeCut,"goffcandle");
+    //    size = tb->Draw(draw_text.Data(),DIS&&ttcut&&ma0cut&&ma1cut&&rangeCut,"goffcandle"); // no bin cut
+    
+    std::cout<<"number of event on bin: "<<size<<std::endl;
+    M=tb->GetVal(0);
+    Event=tb->GetVal(1);
+    for (int i=0;i<size;i++)
+    {
+      meta=M[i];
+      ds_bkg->add(meta);
+    }
+///////////////////////////////////////////////
+*/
+    cut.Clear();
     Float_t err;
-    RooRealVar Ns("Ns","signal counts",500.,0.,1000000.);
-    RooRealVar Nb("Nb","background counts",3000.,0.,1000000.);    
 
-    RooPlot* frame=fit_pdf_aa(hM, minRange, maxRange, err, Ns, Nb, ds,&meta, 1, 0.53,0.07,w,rangeFit);
+    /*   //// get background shape ///////////////////
+    RooPlot* frame_bkg=fit_pdf_aa_bkgnd(hM, minRange, maxRange, ds_bkg,&meta, 1, 0.55,0.045,w,rangeFit);
+    RooAbsPdf *bkg_model=w->pdf("bkg_model");
+    //////////////////////////////////////////
+    */
 
-    Float_t mbratio=Ns.getVal()/Nb.getVal();
+/////// fit invariant mass spectrum //////////
+    //RooPlot* 
+    //Neta=3000.;Nb=3000.;
+    RooPlot* frame;
+    if (gsim)
+      frame=fit_pdf_aa_gsim(ds,1, 0.55,0.045,w,rangeFit); // fit everithing on eta range.
+    else
+      frame=fit_pdf_aa(hM, minRange, maxRange, err, ds,&meta, 1, 0.55,0.045,w,rangeFit); // fit everithing on eta range.
+    //frame=fit_pdf_aa(hM, minRange, maxRange, err, Ns, Nb, ds,&meta, 1, 0.55,0.045,w,rangeFit,bkg_model); // fit considering background shape.
+    //RooPlot* frame=fit_pdf_aa_full(Npi0, Neta, Nm,  Nb, ds,&meta, 1, 0.55,0.045,w,rangeFit); // fit everithing.
 
-    //Float_t mbratio=get_mbratio(hM,minRange,maxRange,err,2,0.55,0.05);
+/////////////////////////////////////////////
+
+
+    RooRealVar *Neta,*Nb;
+    Neta =w->var("Neta");
+    Nb=w->var("Nb");
+   
+    Float_t mbratio=Neta->getVal()/Nb->getVal();
 
     //Float_t Nh_fine=get_Nh(hM_fine,minRange,maxRange,2);
     //Float_t Nh=get_Nh(hM,minRange,maxRange,2);
-
     //cout<<"Nh; coarse: "<<Nh<<" fine: "<<Nh_fine;
-
-    t1sData[2*NFold]=Ns.getVal();
+    //t1sData[2*NFold]=Ns.getVal();
+    t1sData[2*NFold]=Neta->getVal();
     //t1sData[2*NFold]=size;
     //t1sData[2*NFold]=Nh;
-    
     t1sData[2*NFold+1]=k;
-    
     t1sData[2*NFold+2]=mbratio;
     //t1sData[2*NFold+2]=1.;
-    t1sData[2*NFold+3]=Ns.getError();
+    //t1sData[2*NFold+3]=Ns.getError();
+    t1sData[2*NFold+3]=Neta->getError();
     //t1sData[2*NFold+3]=err;
-
     tuple1s->Fill(t1sData);
 
+    /////// MAKING MAIN PICTURE /////////////
     c->cd(1);
 
-    frame->GetYaxis()->SetTitleSize(0.8);    
+    frame->GetYaxis()->SetTitleSize(0.8);
+    frame->SetTitle("");
     frame->Draw();
 
 
@@ -495,7 +437,8 @@ int main(int argc, char *argv[])
     RooDataHist *modelhist = model->generateBinned(meta,0,true,true);
     w->import(*modelhist);
     TH1F * hm= (TH1F *)modelhist->createHistogram("hm",meta,Binning(100,minRange,maxRange));
-  
+
+    //////// making ratio plot ////////
     TH1F *hratio = (TH1F *) hdata->Clone("hratio");
     for (int b=0;b<hratio->GetNbinsX();b++)
     {
@@ -505,7 +448,6 @@ int main(int argc, char *argv[])
       hratio->SetBinContent(b+1,(data-mdata)/err);
       hratio->SetBinError(b+1,0.);
     }
-  
     c->cd(2);
     hratio->SetTitle("");
     hratio->SetMaximum(5);
@@ -534,10 +476,26 @@ int main(int argc, char *argv[])
     line->DrawLine(rangeFit[0],-siglim,rangeFit[0],siglim);
     //line->SetLineColor(kBlue);
     line->DrawLine(rangeFit[1],-siglim,rangeFit[1],siglim);
-
+    //////////////////////////////
+    ////// storing pictures /////////////
     c->SaveAs(Form("%s/hM1_%d.gif",picdir,k));
     c->SaveAs(Form("%s/hM1_%d.C",picdir,k));
-  
+
+    ///////////// MAIN PICTURE FINISH  //////////////////
+
+
+    /*
+    ///////// ploting and storing background shape /////////
+    TCanvas *c_bkg = new TCanvas ("c_bkg","c_bkg",920,690);
+    frame_bkg->GetYaxis()->SetTitleSize(0.8);
+    frame_bkg->SetTitle("combinatorial background");
+    frame_bkg->Draw();
+    c_bkg->SaveAs(Form("%s/hM1_%d_bk.gif",picdir,k));
+    c_bkg->SaveAs(Form("%s/hM1_%d_bk.C",picdir,k));
+    frame_bkg->Write(Form("frm_bkg1_%d",k),TObject::kOverwrite);
+    ///////////////////////////////////////////////////////
+    */
+
     hM->Write("",TObject::kOverwrite);
     frame->Write(Form("frm1_%d",k),TObject::kOverwrite);
     ds->Write(Form("ds1_%d",k),TObject::kOverwrite);
@@ -546,6 +504,8 @@ int main(int argc, char *argv[])
     //    hM->Draw("e");
     if (k!=0) c->SaveAs(Form("%s/hM_mov.gif+30",outdir.Data()));
     else c->SaveAs(Form("%s/hM_mov.gif",outdir.Data()));
+
+    
     delete hM;
     delete fmb;
     

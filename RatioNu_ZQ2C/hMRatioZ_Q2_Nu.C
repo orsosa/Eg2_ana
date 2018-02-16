@@ -1,0 +1,110 @@
+{
+//=========Macro generated from canvas: c/c
+//=========  (Tue Mar 14 11:41:30 2017) by ROOT version5.34/19
+   TCanvas *c = new TCanvas("c", "c",0,0,1200,900);
+   c->SetHighLightColor(2);
+   c->Range(-0.9858439,-1.117922,0.9858439,1.117922);
+   TView *view = TView::CreateView(1);
+   view->SetRange(0.3,2.2,0,0.8,4.25,3.046099);
+   c->SetFillColor(0);
+   c->SetBorderMode(0);
+   c->SetBorderSize(2);
+   c->SetGridx();
+   c->SetGridy();
+   c->SetFrameBorderMode(0);
+   Double_t xAxis1[6] = {0.3, 0.4, 0.5, 0.6, 0.7, 0.8}; 
+   Double_t yAxis1[4] = {2.2, 3.2, 3.73, 4.25}; 
+   
+   TH2F *hMRatio = new TH2F("hMRatio","Multiplicity ratio",5, xAxis1,3, yAxis1);
+   hMRatio->SetBinContent(1,5.103003);
+   hMRatio->SetBinContent(2,5.186442);
+   hMRatio->SetBinContent(3,5.126626);
+   hMRatio->SetBinContent(4,5.148726);
+   hMRatio->SetBinContent(5,5.169094);
+   hMRatio->SetBinContent(8,2.762901);
+   hMRatio->SetBinContent(9,2.618966);
+   hMRatio->SetBinContent(10,2.467322);
+   hMRatio->SetBinContent(11,2.39674);
+   hMRatio->SetBinContent(12,2.380629);
+   hMRatio->SetBinError(1,0.01557194);
+   hMRatio->SetBinError(2,0.01582232);
+   hMRatio->SetBinError(3,0.01795048);
+   hMRatio->SetBinError(4,0.02185426);
+   hMRatio->SetBinError(5,0.02214549);
+   hMRatio->SetBinError(8,0.0155495);
+   hMRatio->SetBinError(9,0.01596066);
+   hMRatio->SetBinError(10,0.01614723);
+   hMRatio->SetBinError(11,0.01554655);
+   hMRatio->SetBinError(12,0.01664724);
+   hMRatio->SetEntries(45);
+   hMRatio->SetContour(20);
+   hMRatio->SetContourLevel(0,0);
+   hMRatio->SetContourLevel(1,0.1381451);
+   hMRatio->SetContourLevel(2,0.2762901);
+   hMRatio->SetContourLevel(3,0.4144352);
+   hMRatio->SetContourLevel(4,0.5525803);
+   hMRatio->SetContourLevel(5,0.6907253);
+   hMRatio->SetContourLevel(6,0.8288704);
+   hMRatio->SetContourLevel(7,0.9670155);
+   hMRatio->SetContourLevel(8,1.105161);
+   hMRatio->SetContourLevel(9,1.243306);
+   hMRatio->SetContourLevel(10,1.381451);
+   hMRatio->SetContourLevel(11,1.519596);
+   hMRatio->SetContourLevel(12,1.657741);
+   hMRatio->SetContourLevel(13,1.795886);
+   hMRatio->SetContourLevel(14,1.934031);
+   hMRatio->SetContourLevel(15,2.072176);
+   hMRatio->SetContourLevel(16,2.210321);
+   hMRatio->SetContourLevel(17,2.348466);
+   hMRatio->SetContourLevel(18,2.486611);
+   hMRatio->SetContourLevel(19,2.624756);
+   
+   TPaveStats *ptstats = new TPaveStats(0.78,0.695,0.98,0.935,"brNDC");
+   ptstats->SetName("stats");
+   ptstats->SetBorderSize(1);
+   ptstats->SetFillColor(0);
+   ptstats->SetTextAlign(12);
+   ptstats->SetTextFont(42);
+   TText *text = ptstats->AddText("hMRatio");
+   text->SetTextSize(0.0368);
+   text = ptstats->AddText("Entries = 45     ");
+   text = ptstats->AddText("Mean x = 0.5422");
+   text = ptstats->AddText("Mean y =  2.935");
+   text = ptstats->AddText("RMS x = 0.1421");
+   text = ptstats->AddText("RMS y = 4.215e-08");
+   ptstats->SetOptStat(1111);
+   ptstats->SetOptFit(0);
+   ptstats->Draw();
+   hMRatio->GetListOfFunctions()->Add(ptstats);
+   ptstats->SetParent(hMRatio);
+
+   Int_t ci;      // for color index setting
+   TColor *color; // for color definition with alpha
+   ci = TColor::GetColor("#000099");
+   hMRatio->SetLineColor(ci);
+   hMRatio->GetXaxis()->SetLabelFont(42);
+   hMRatio->GetXaxis()->SetLabelSize(0.035);
+   hMRatio->GetXaxis()->SetTitleSize(0.035);
+   hMRatio->GetXaxis()->SetTitleFont(42);
+   hMRatio->GetYaxis()->SetLabelFont(42);
+   hMRatio->GetYaxis()->SetLabelSize(0.035);
+   hMRatio->GetYaxis()->SetTitleSize(0.035);
+   hMRatio->GetYaxis()->SetTitleFont(42);
+   hMRatio->GetZaxis()->SetLabelFont(42);
+   hMRatio->GetZaxis()->SetLabelSize(0.035);
+   hMRatio->GetZaxis()->SetTitleSize(0.035);
+   hMRatio->GetZaxis()->SetTitleFont(42);
+   hMRatio->Draw("lego2");
+   
+   TPaveText *pt = new TPaveText(0.3461873,0.9358257,0.6538127,0.995,"blNDC");
+   pt->SetName("title");
+   pt->SetBorderSize(0);
+   pt->SetFillColor(0);
+   pt->SetFillStyle(0);
+   pt->SetTextFont(42);
+   text = pt->AddText("Multiplicity ratio");
+   pt->Draw();
+   c->Modified();
+   c->cd();
+   c->SetSelected(c);
+}

@@ -1,0 +1,118 @@
+{
+//=========Macro generated from canvas: c/c
+//=========  (Fri Apr  1 07:46:37 2016) by ROOT version5.34/19
+   TCanvas *c = new TCanvas("c", "c",1,1,1024,704);
+   c->Range(-131.25,-3.01875,681.25,27.16875);
+   c->SetFillColor(0);
+   c->SetBorderMode(0);
+   c->SetBorderSize(2);
+   c->SetFrameBorderMode(0);
+   c->SetFrameBorderMode(0);
+   
+   TH1F *nphe_s1 = new TH1F("nphe_s1","nphe {sector==1}",150,-50,600);
+   nphe_s1->SetBinContent(0,113);
+   nphe_s1->SetBinContent(13,5);
+   nphe_s1->SetBinContent(14,4);
+   nphe_s1->SetBinContent(15,5);
+   nphe_s1->SetBinContent(16,10);
+   nphe_s1->SetBinContent(17,7);
+   nphe_s1->SetBinContent(18,12);
+   nphe_s1->SetBinContent(19,19);
+   nphe_s1->SetBinContent(20,4);
+   nphe_s1->SetBinContent(21,6);
+   nphe_s1->SetBinContent(22,13);
+   nphe_s1->SetBinContent(23,15);
+   nphe_s1->SetBinContent(24,9);
+   nphe_s1->SetBinContent(25,4);
+   nphe_s1->SetBinContent(26,13);
+   nphe_s1->SetBinContent(27,7);
+   nphe_s1->SetBinContent(28,14);
+   nphe_s1->SetBinContent(29,16);
+   nphe_s1->SetBinContent(30,12);
+   nphe_s1->SetBinContent(31,23);
+   nphe_s1->SetBinContent(32,11);
+   nphe_s1->SetBinContent(33,17);
+   nphe_s1->SetBinContent(34,17);
+   nphe_s1->SetBinContent(35,13);
+   nphe_s1->SetBinContent(36,14);
+   nphe_s1->SetBinContent(37,18);
+   nphe_s1->SetBinContent(38,9);
+   nphe_s1->SetBinContent(39,4);
+   nphe_s1->SetBinContent(40,6);
+   nphe_s1->SetBinContent(41,17);
+   nphe_s1->SetBinContent(42,10);
+   nphe_s1->SetBinContent(43,15);
+   nphe_s1->SetBinContent(44,8);
+   nphe_s1->SetBinContent(45,5);
+   nphe_s1->SetBinContent(46,8);
+   nphe_s1->SetBinContent(47,8);
+   nphe_s1->SetBinContent(48,9);
+   nphe_s1->SetBinContent(49,8);
+   nphe_s1->SetBinContent(50,8);
+   nphe_s1->SetBinContent(51,7);
+   nphe_s1->SetBinContent(52,10);
+   nphe_s1->SetBinContent(53,8);
+   nphe_s1->SetBinContent(54,1);
+   nphe_s1->SetBinContent(55,7);
+   nphe_s1->SetBinContent(56,1);
+   nphe_s1->SetBinContent(57,5);
+   nphe_s1->SetBinContent(58,5);
+   nphe_s1->SetBinContent(59,1);
+   nphe_s1->SetBinContent(60,1);
+   nphe_s1->SetBinContent(61,3);
+   nphe_s1->SetBinContent(64,2);
+   nphe_s1->SetBinContent(65,1);
+   nphe_s1->SetBinContent(66,3);
+   nphe_s1->SetBinContent(67,1);
+   nphe_s1->SetBinContent(72,1);
+   nphe_s1->SetBinContent(74,1);
+   nphe_s1->SetBinContent(82,1);
+   nphe_s1->SetEntries(575);
+   
+   TPaveStats *ptstats = new TPaveStats(0.78,0.775,0.98,0.935,"brNDC");
+   ptstats->SetName("stats");
+   ptstats->SetBorderSize(1);
+   ptstats->SetFillColor(0);
+   ptstats->SetTextAlign(12);
+   ptstats->SetTextFont(42);
+   TText *text = ptstats->AddText("nphe_s1");
+   text->SetTextSize(0.0368);
+   text = ptstats->AddText("Entries = 575    ");
+   text = ptstats->AddText("Mean  =  99.44");
+   text = ptstats->AddText("RMS   =  54.61");
+   ptstats->SetOptStat(1111);
+   ptstats->SetOptFit(0);
+   ptstats->Draw();
+   nphe_s1->GetListOfFunctions()->Add(ptstats);
+   ptstats->SetParent(nphe_s1);
+
+   Int_t ci;      // for color index setting
+   TColor *color; // for color definition with alpha
+   ci = TColor::GetColor("#000099");
+   nphe_s1->SetLineColor(ci);
+   nphe_s1->GetXaxis()->SetLabelFont(42);
+   nphe_s1->GetXaxis()->SetLabelSize(0.035);
+   nphe_s1->GetXaxis()->SetTitleSize(0.035);
+   nphe_s1->GetXaxis()->SetTitleFont(42);
+   nphe_s1->GetYaxis()->SetLabelFont(42);
+   nphe_s1->GetYaxis()->SetLabelSize(0.035);
+   nphe_s1->GetYaxis()->SetTitleSize(0.035);
+   nphe_s1->GetYaxis()->SetTitleFont(42);
+   nphe_s1->GetZaxis()->SetLabelFont(42);
+   nphe_s1->GetZaxis()->SetLabelSize(0.035);
+   nphe_s1->GetZaxis()->SetTitleSize(0.035);
+   nphe_s1->GetZaxis()->SetTitleFont(42);
+   nphe_s1->Draw("");
+   
+   TPaveText *pt = new TPaveText(0.3463725,0.935,0.6536275,0.995,"blNDC");
+   pt->SetName("title");
+   pt->SetBorderSize(0);
+   pt->SetFillColor(0);
+   pt->SetFillStyle(0);
+   pt->SetTextFont(42);
+   text = pt->AddText("nphe {sector==1}");
+   pt->Draw();
+   c->Modified();
+   c->cd();
+   c->SetSelected(c);
+}

@@ -6,8 +6,8 @@
 #PBS -q utfsm # use specific queue
 tt=$1
 outdir=$2
-lt=$3
-datafile="eta_${tt}D_aa_all_bkg.root"
+lt=$4
+datafile=$3
 
 cd $TMPDIR
 cp /user/o/orsosa/osoto_ana/binning_info.txt .

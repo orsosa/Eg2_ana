@@ -10,15 +10,15 @@ fi
 
 if [ $1 == "sim" -o $1 == "all" ]; then
 #Deuterium
-sed -r 's:^opt=.*:opt="gsim":g' run_eta_id.sh | sed 's:^tt=.*:tt="C_D":g' > run_eta_id_qsub_gsimD.sh
+sed -r 's:^opt=.*:opt="gsim":g' run_eta_id.sh | sed 's:^tt=.*:tt="LT":g' > run_eta_id_qsub_gsimD.sh
 #Solid Target
-sed -r 's:^opt=.*:opt="gsim":g' run_eta_id.sh | sed 's:^tt=.*:tt="C/C_xyz":g'> run_eta_id_qsub_gsimC.sh
+sed -r 's:^opt=.*:opt="gsim":g' run_eta_id.sh | sed 's:^tt=.*:tt="ST":g'> run_eta_id_qsub_gsimC.sh
 
 #Send pid on simrec data
 #Deuterium
-sed -r 's:^opt=.*:opt="simrec":g' run_eta_id.sh | sed 's:^tt=.*:tt="C_D":g' > run_eta_id_qsub_simrecD.sh
+sed -r 's:^opt=.*:opt="simrec":g' run_eta_id.sh | sed 's:^tt=.*:tt="LT":g' > run_eta_id_qsub_simrecD.sh
 #Solid Target
-sed -r 's:^opt=.*:opt="simrec":g' run_eta_id.sh | sed 's:^tt=.*:tt="C/C_xyz":g' > run_eta_id_qsub_simrecC.sh
+sed -r 's:^opt=.*:opt="simrec":g' run_eta_id.sh | sed 's:^tt=.*:tt="ST":g' > run_eta_id_qsub_simrecC.sh
 fi
 
 if [ $1 == "data" -o $1 == "all" ]; then
@@ -42,9 +42,9 @@ bash -c 'a=arg;\
  elif [ -z "${a##*data*Pb*}" ];then\
  qsub $a -t 1-171;\
  elif [ -z "${a##*sim*D*}" ];then\
- qsub $a -t 0-5; \
+ qsub $a -t 1-14; \
  elif [ -z "${a##*sim*C*}" ];then\
- qsub $a -t 0-6; \
+ qsub $a -t 1-17; \
  fi\
 ';
 

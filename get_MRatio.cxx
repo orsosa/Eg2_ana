@@ -11,6 +11,8 @@
 #include "Math/GSLIntegrator.h"
 #include "TBenchmark.h"
 #include "TLorentzVector.h"
+#include "RooWorkspace.h"
+#include "RooRealVar.h"
 #include "TCanvas.h"
 #include "TH2F.h"
 #include "TLatex.h"
@@ -19,6 +21,7 @@
 #include "TCut.h"
 #include "TString.h"
 #include "TH1F.h"
+#include "TH1D.h"
 #include "THStack.h"
 #include <string>
 #include <iostream>
@@ -131,7 +134,7 @@ int main(int argc, char *argv[])
   TH1F *hacc = new TH1F("hacc","Acceptance",Nbins+2,-1,Nbins+1);
   TH2F *hMRatio = new TH2F("hMRatio","Multiplicity ratio",NEdges[binorder[0]]-1,BinEdges[binorder[0]],NEdges[binorder.back()]-1,BinEdges[binorder.back()]);
 
-  TH1F *hMRatioProj = new TH1F("hMRatioProj",Form("Multiplicity Ratio (%s)",BinName[binorder.back()]),NEdges[binorder.back()]-1,BinEdges[binorder.back()]);
+  TH1D *hMRatioProj = new TH1D("hMRatioProj",Form("Multiplicity Ratio (%s)",BinName[binorder.back()]),NEdges[binorder.back()]-1,BinEdges[binorder.back()]);
 
   TH1F *hNhST = new TH1F("hNhST",Form("Nh solid target (%s)",BinName[binorder.back()]),NEdges[binorder.back()]-1,BinEdges[binorder.back()]);
 
@@ -144,6 +147,7 @@ int main(int argc, char *argv[])
   //TH1F *hgsim,*hrec;
   TGraph *grec, *ggsim;
   TNtuple *tr1LT, *tr1sLT,  *tg1LT, *tg1sLT, *tr1ST, *tr1sST,  *tg1ST, *tg1sST, *tdLT, *tdsLT, *tdST, *tdsST;
+
   TTree *tde;
 
   if (!no_acc)
@@ -244,7 +248,8 @@ int main(int argc, char *argv[])
   
   for (int k=0; k<NFold;k++) std::cout<<BinName[binorder[k]]<<"\t";
 
-  std::cout<<"NhST\t\tAccST\t\tNhLT\t\taccLT\n";
+  std::cout<<"NhST\t\tAccST\t\tNhLT\t\taccLT\tacc_factor\n";
+  Float_t acc_factor=1.0;
   for (int i=0; i<nbsdLT;i++)
   {
 
@@ -261,18 +266,22 @@ int main(int argc, char *argv[])
       accST = tr1sST->GetVal(0)[i]/tg1sST->GetVal(0)[i];
       sigAccLT = accLT*TMath::Sqrt(1./tr1sLT->GetVal(0)[i] + 1./tg1sLT->GetVal(0)[i]);
       sigAccST = accST*TMath::Sqrt(1./tr1sST->GetVal(0)[i] + 1./tg1sST->GetVal(0)[i]);
+      //acc_factor=tr1sLT->GetVal(0)[i]/tr1sST->GetVal(0)[i];
+      //acc_factor*=tg1sST->GetVal(0)[i]/tg1sLT->GetVal(0)[i]; 
     }
 
     
     Float_t NhST = tdsST->GetVal(0)[i];
     Float_t NhLT = tdsLT->GetVal(0)[i];
 
-    Float_t MR = ( NhST/NeA/accST ) / ( NhLT/NeD/accLT ) ;
+    //Float_t MR = ( NhST/NeA/accST ) / ( NhLT/NeD/accLT ) ;
+    Float_t MR = (NhST/NhLT) * (NeD/NeA) * acc_factor; //comparing similar size stuff;
 
     Float_t sigMR = MR*TMath::Sqrt( 1./NhST + 1./NhLT + 1./NeA + 1./NeD + sigAccST*sigAccST/(accST*accST) + sigAccLT*sigAccLT/(accLT*accLT) );// To be Checked, wrong probably.
 
-    hMRatio->Fill(tdsST->GetVal(1)[i],tdsST->GetVal(2)[i],MR);
-    hMRatio->SetBinError(hMRatio->FindBin(tdsST->GetVal(1)[i],tdsST->GetVal(2)[i]),sigMR);
+    Int_t draw_ind_y = binorder.size(); 
+    hMRatio->Fill(tdsST->GetVal(1)[i],tdsST->GetVal(draw_ind_y)[i],MR);
+    hMRatio->SetBinError(hMRatio->FindBin(tdsST->GetVal(1)[i],tdsST->GetVal(draw_ind_y)[i]),sigMR);
     Float_t mbrST_e2N = tdsST->GetVal(NFold+1)[i];
     Float_t mbrLT_e2N = tdsLT->GetVal(NFold+1)[i];
     //    hsigUp ->Fill(tdsST->GetVal(NFold)[i] ,1./NhST +  sigAccST*sigAccST/accST/accST + mbrST_e2N);
@@ -289,7 +298,7 @@ int main(int argc, char *argv[])
     */
     for (int k=1; k<NFold+1;k++) std::cout<<tdsST->GetVal(k)[i]<<"\t";
 
-    std::cout<<NhST<<"\t\t"<<accST<<"\t\t"<<NhLT<<"\t\t"<<accLT<<"\n";
+    std::cout<<NhST<<"\t\t"<<accST<<"\t\t"<<NhLT<<"\t\t"<<accLT<<"\t\t"<<acc_factor<<"\n";
     /*    if (acc)hacc->Fill(tr1s->GetVal(1)[i],tr1s->GetVal(0)[i]/tg1s->GetVal(0)[i]);
     if (acc)hacc->SetBinError(hacc->FindBin(tr1s->GetVal(1)[i]),(tr1s->GetVal(0)[i]/tg1s->GetVal(0)[i])*TMath::Sqrt(1./tr1s->GetVal(0)[i]+1./tg1s->GetVal(0)[i]));
     std::cout<<tr1s->GetVal(1)[i]<<"\t"<<tr1s->GetVal(0)[i]<<"\t"<<tg1s->GetVal(0)[i]<<"\t"<<tr1s->GetVal(0)[i]/tg1s->GetVal(0)[i]<<std::endl;
@@ -318,6 +327,9 @@ int main(int argc, char *argv[])
 
     }
 
+    //delete hMRatioProj;
+    hMRatioProj = hMRatio->ProjectionY("hMRatioProj",1,hMRatio->GetNbinsX());
+    
     hMRatioProj->SetTitle(Form("Multiplicity Ratio (%s)",BinName[binorder.back()]));
     hMRatioProj->SetMarkerColor(kBlack);
     hMRatioProj->SetMarkerStyle(kFullDotLarge);

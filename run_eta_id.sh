@@ -37,11 +37,14 @@ else
 	sim="gsim";
     fi # for sim only
     echo $sim
-    outdir="/data/user/o/orsosa/eg2_sim_pruned/$tt/$sim" # for sim only    
+    simdir=/data/user/o/orsosa/eg2_sim_pruned_new
+#    outdir="/data/user/o/orsosa/eg2_sim_pruned/$tt/$sim" # for sim only    
+    outdir=$simdir/$tt/$sim # for sim only    
     rn=$PBS_ARRAYID # for sim only
 #    cp /data/atlas/users/orsosa/eg2_sim_pruned/$tt/pruned_simul_$rn.root data.root # for sim only
-    cp /data/user/o/orsosa/eg2_sim_pruned/$tt/pruned_simul_$rn.root data.root # for sim only
-
+#    cp /data/user/o/orsosa/eg2_sim_pruned/$tt/pruned_simul_$rn.root data.root # for sim only
+    file=$(ls -tr $simdir/$tt/*5e6*.root | sed -n "$PBS_ARRAYID{p;q}") #could be changed for find to increase speed.
+    cp $file data.root
     mkdir -p $outdir 2> /dev/null
 fi
 
@@ -49,5 +52,5 @@ echo "outdir: "
 echo $outdir
 
 ./eta_id -t $opt
-cp etaout_3pi_all.root $outdir"/etaout_3pi_all_"$rn".root"
+cp etaout_aa_all_bkg_fid.root $outdir"/etaout_aa_all_"$rn"_fid.root"
 

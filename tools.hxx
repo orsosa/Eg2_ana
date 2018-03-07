@@ -249,31 +249,55 @@ inline RooPlot* fit_pdf_aa(TH1F *histo,Float_t minRange0, Float_t maxRange0,Floa
   RooConstVar Rv=RooConst(R);
   
   //Signal  
-  RooRealVar x("x","variable",xmin,xmax); 
   //  RooRealVar s("s","#sigma",kSP,0.,1.05*kSP); 
   // RooRealVar m("m","mean",kMP,kMP*0.9,1.1*kMP); 
   //  
-  RooRealVar s("s","#sigma",kSP); 
+  //  RooRealVar s("s","#sigma",kSP,kSP*0.9,1.1*kSP); //sigma variable 
+  RooRealVar s("s","#sigma",kSP); // sigma fixed 
   RooRealVar m("m","mean",kMP,0.5,0.6); 
 
   RooGaussian sig("sig","eta mass",*meta,m,s);
   ///////////////////
   //Background
   //////regular polynome
-  RooRealVar a1("a1","linear term",-2.,-20000.,0.); 
-  RooRealVar a2("a2","quadratic term",1.,0.,2000.); 
-  RooRealVar a3("a3","cubic term",0.1,0.,1000.); 
+  RooRealVar a0("a0","const",0.,-1000.,1000.); 
+  RooRealVar a1("a1","linear term",-0.723,-1000.,1000.) ;
+  RooRealVar a2("a2","quadratic term",-0.426,-1000.,1000.); 
+  RooRealVar a3("a3","cubic term",0,-1000.,1000.); 
+
+
+  RooChebychev bkg_pol1("bkg_pol1","bkg polinomial 1th",*meta,RooArgList(a1));
+  RooChebychev bkg_pol2("bkg_pol2","bkg polinomial 2st",*meta,RooArgList(a1,a2));
+  RooChebychev bkg_pol3("bkg_pol3","bkg polinomial 3nd",*meta,RooArgList(a1,a2,a3));
+
+  //RooRealVar a1("a1","linear term",-2.,-20000.,0.) ;
+  //RooRealVar a2("a2","quadratic term",1.,0.,2000.); 
+
   //  RooRealVar a4("a4","quartic term",1.,-1000.,1000.); 
   //  RooPolynomial bkg("bkg","background",*meta,RooArgList(a1,a2));
   //RooPolynomial bkg("bkg","background",*meta,RooArgList(a1,a2,a3));
-  RooRealVar k("k","decaying number",-20.,-100.,0.);
-  RooExponential bkg("bkg","exponential background",*meta,k);
+  RooRealVar k("k","decaying number",-15.,-30.,0.);
 
+  RooExponential bkg_exp("bkg_exp","exponential background",*meta,k);
   //RooFormulaVar minFunc("minFunc","Minimum formula","-a1/2./a2",RooArgList(a1,a2));
   RooFormulaVar minFunc("minFunc","Minimum formula","(-a2 + TMath::Sqrt(a2*a2 - 3*a3*a1) )/(3*a3)",RooArgList(a1,a2,a3));
 
+  RooRealVar Npol("Npol","polynomial entries",50,0,1e6);
+  RooRealVar Nexp("Nexp","exponential entries",100,0,1e6);
 
-  /*
+  RooAddPdf bkg_exp_pol1("bkg_exp_pol1","exp + pol1",RooArgList(bkg_exp,bkg_pol1),RooArgList(Nexp,Npol));
+  RooAddPdf bkg_exp_pol2("bkg_exp_pol2","exp + pol2",RooArgList(bkg_exp,bkg_pol2),RooArgList(Nexp,Npol));
+  RooAddPdf bkg_exp_pol3("bkg_exp_pol3","exp + pol3",RooArgList(bkg_exp,bkg_pol3),RooArgList(Nexp,Npol));
+
+
+  ///////////BACKGROUND SHAPE SELECTION ////////// 
+  //RooAbsPdf *bkg = ( RooAbsPdf *)bkg_pol2.Clone("bkg");
+  RooAbsPdf *bkg = ( RooAbsPdf *)bkg_exp.Clone("bkg");
+  //RooAbsPdf *bkg = ( RooAbsPdf *)bkg_exp_pol1.Clone("bkg");
+  //RooAbsPdf *bkg = ( RooAbsPdf *)bkg_exp_pol2.Clone("bkg");
+  //RooAbsPdf *bkg = ( RooAbsPdf *)bkg_exp_pol3.Clone("bkg");
+  
+   /*
   ////////Chebychev
   RooRealVar a1("a1","linear term",60,-1000,1000); 
   RooRealVar a2("a2","quadratic term",-150,-1000,0); 
@@ -286,9 +310,8 @@ inline RooPlot* fit_pdf_aa(TH1F *histo,Float_t minRange0, Float_t maxRange0,Floa
   RooGaussian parConst("parConst","Minimum constrain",minFunc,RooConst(1),RooConst(0.3));
 
   RooPlot* xframe = meta->frame();
-  //  RooPlot* xframe = x.frame();
   //Data
-  RooDataHist data("data","dataset",x,histo);
+
   ////////////
   //  RooRealVar Ns("Ns","signal counts",100,0,10000);
   //RooRealVar Nb("Nb","background counts",300,0,10000);
@@ -296,42 +319,54 @@ inline RooPlot* fit_pdf_aa(TH1F *histo,Float_t minRange0, Float_t maxRange0,Floa
   RooAddPdf *model;
 
   if (bkg_model)
-    {
+  {
     ((RooArgSet *)bkg_model->getParameters(*meta))->setAttribAll("Constant");
-    model = new RooAddPdf("model","@0 + @1",RooArgList(sig,*bkg_model),RooArgList(Neta,Nb));
+    model = new RooAddPdf("model","gauss + bkgmodel",RooArgList(sig,*bkg_model),RooArgList(Neta,Nb));
   }
   else
-    model = new RooAddPdf("model","@0 + @1",RooArgList(sig,bkg),RooArgList(Neta,Nb));
-
+    model = new RooAddPdf("model",Form("gauss  + %s",bkg->GetTitle()),RooArgList(sig,*bkg),RooArgList(Neta,Nb));
+  //
+  
 
   RooFitResult* res;
   //Float_t rangeFit[2]={0.35,0.75};
+  /*
   if (ds!=0)
   {
-    ds->plotOn(xframe);
-    //res  = model->fitTo(*ds,Range(rangeFit[0],rangeFit[1]),ExternalConstraints(parConst),Save());
-    res  = model->fitTo(*ds,Range(rangeFit[0],rangeFit[1]),Save());
-
-  }
+  */
+  //res  = model->fitTo(*ds,Range(rangeFit[0],rangeFit[1]),ExternalConstraints(parConst),Save());
+  //std::cout<<"#####    DEBUG   ########################"<<__LINE__<<std::endl;
+  res  = model->fitTo(*ds,Range(rangeFit[0],rangeFit[1]),Save());
+  //  std::cout<<"#####    DEBUG   ########################"<<__LINE__<<std::endl;
+    /*  }
   else
     res= model->fitTo(data,Range(rangeFit[0],rangeFit[1]),ExternalConstraints(parConst),Save());
-  
+    */
   //  model.plotOn(xframe,VisualizeError(*res,1),Minimizer("Minuit2"),FillColor(kOrange));
 
   //data.plotOn(xframe,MarkerColor(kBlack),LineColor(kBlack));
 
+  ds->plotOn(xframe,MarkerColor(kBlack),LineColor(kBlack));
+
+  //std::cout<<"#####    DEBUG   ########################"<<__LINE__<<std::endl;
+
   model->plotOn(xframe,VisualizeError(*res,1),FillColor(kOrange));
+  //std::cout<<"#####    DEBUG   ########################"<<__LINE__<<std::endl;
+ 
   if (bkg_model)
     model->plotOn(xframe,Components(*bkg_model),LineStyle(kDashed));
   else 
-    model->plotOn(xframe,Components(bkg),LineStyle(kDashed));
-  //  model.plotOn(xframe,Components(sig),LineStyle(kDashed),LineColor(kBlack)); 
+    model->plotOn(xframe,Components(*bkg),LineStyle(kDashed));
+  
   model->plotOn(xframe,LineColor(kRed));
-  if (ds!=0)    
-    ds->plotOn(xframe,MarkerColor(kBlack),LineColor(kBlack));
-  else
-    data.plotOn(xframe,MarkerColor(kBlack),LineColor(kBlack));
-  //  xframe->Draw();
+  //  if (ds!=0)
+
+  ds->plotOn(xframe,MarkerColor(kBlack),LineColor(kBlack));
+  //else
+  //  data.plotOn(xframe,MarkerColor(kBlack),LineColor(kBlack));
+
+
+//  xframe->Draw();
   //c->SaveAs(Form("%s/hM1_%d.gif",picdir,bin));
   //c->SaveAs(Form("%s/hM1_%d.C",picdir,bin)); 
   w->import(*model);
@@ -341,7 +376,9 @@ inline RooPlot* fit_pdf_aa(TH1F *histo,Float_t minRange0, Float_t maxRange0,Floa
   w->defineSet("observable",*meta);
   w->saveSnapshot("fit_values",*par,kTRUE);
 
+  
   delete model;
+  delete bkg;
   return xframe;
 }
 
@@ -461,11 +498,11 @@ inline RooPlot* fit_pdf_aa_gsim(RooDataSet *ds=0, int Ni = 1, Float_t kMP=kMPi0,
   s1.setConstant();sg.setConstant();m1.setConstant();
   RooFitResult* res;
   //Float_t rangeFit[2]={0.35,0.75};
-  ds->plotOn(xframe,RooFit::Binning(1e4));
+  ds->plotOn(xframe,RooFit::Binning(1e4),MarkerColor(kBlack),LineColor(kBlack));
   res  = model.fitTo(*ds,RooFit::Range(rangeFit[0],rangeFit[1]),RooFit::Extended(),RooFit::Save());
 
   model.plotOn(xframe,LineColor(kRed));
-  ds->plotOn(xframe,MarkerColor(kBlack),LineColor(kBlack));
+  
 
   w->import(model);
 
@@ -478,7 +515,7 @@ inline RooPlot* fit_pdf_aa_gsim(RooDataSet *ds=0, int Ni = 1, Float_t kMP=kMPi0,
 }
 
 
-inline int set_aliases_aa(TTree* &t)
+inline int set_aliases_aa(TChain* &t)
 {
   t->SetAlias("PhiH",Form("TMath::RadToDeg()*((%sx>0)*(TMath::ATan(%sy/%sx)) + (%sx<=0)*(TMath::ATan(%sy/%sx)+TMath::Pi()))","primary.Ph","primary.Ph","primary.Ph","primary.Ph","primary.Ph","primary.Ph"));
 
@@ -721,6 +758,67 @@ void setStyle()
   myStyle->SetFrameBorderMode(0);
 
   gROOT->SetStyle("orsosaStyle"); //uncomment to set this style 
+}
+
+TVector3 *TIdentificator::XYZToUVW(TVector3 *xyz){
+  // Converts x,y,z EC hit in CLAS coordinate system
+  // into u,v,w distances of the EC hit.
+
+  Float_t ex=0.;
+  Float_t wy=0.;
+  Float_t zd=0.;
+  Float_t yu=0.;
+  Float_t ve=0.;
+  Float_t wu=0.;
+  Float_t xi=0.; 
+  Float_t yi=0.; 
+  Float_t zi=0.;
+  Float_t ec_phy = 0.;
+  Float_t phy = 0.;
+  Float_t rot[3][3];
+
+  // Parameters
+  Float_t ec_the = 0.4363323;
+  Float_t ylow = -182.974;
+  Float_t yhi = 189.956;
+  Float_t tgrho = 1.95325; 
+  Float_t sinrho = 0.8901256; 
+  Float_t cosrho = 0.455715;
+
+  // Variables
+  ex = xyz->X();
+  wy = xyz->Y();
+  zd = xyz->Z();
+  
+  phy = TMath::ATan2(wy,ex)*57.29578;
+  if(phy<0.){phy = phy + 360;}
+  phy = phy+30.;
+  if(phy>360.){phy = phy-360.;}
+
+  ec_phy = ((Int_t) (phy/60.))*1.0471975;
+
+  rot[0][0] = TMath::Cos(ec_the)*TMath::Cos(ec_phy);
+  rot[0][1] = -TMath::Sin(ec_phy);
+  rot[0][2] = TMath::Sin(ec_the)*TMath::Cos(ec_phy);
+  rot[1][0] = TMath::Cos(ec_the)*TMath::Sin(ec_phy);
+  rot[1][1] = TMath::Cos(ec_phy);
+  rot[1][2] = TMath::Sin(ec_the)*TMath::Sin(ec_phy);
+  rot[2][0] = -TMath::Sin(ec_the);
+  rot[2][1] = 0.;
+  rot[2][2] = TMath::Cos(ec_the);
+
+  yi = ex*rot[0][0]+wy*rot[1][0]+zd*rot[2][0];
+  xi = ex*rot[0][1]+wy*rot[1][1]+zd*rot[2][1];
+  zi = ex*rot[0][2]+wy*rot[1][2]+zd*rot[2][2];
+  zi = zi-510.32 ;
+
+  yu = (yi-ylow)/sinrho;
+  ve = (yhi-ylow)/tgrho - xi + (yhi-yi)/tgrho;
+  wu = ((yhi-ylow)/tgrho + xi + (yhi-yi)/tgrho)/2./cosrho;
+
+  TVector3 * result3= new TVector3(yu,ve,wu);
+
+  return result3;
 }
 
 

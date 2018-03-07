@@ -1,5 +1,7 @@
 #!/bin/bash
-outdir=ZQ2NuPt2eta_aa_fullrange_UML_fullRange/data
+basedir=$1
+outdir=$basedir/data
+#ZQ2NuPt2eta_aa_fullrange_UML_widthfix_bkgExp_pol/
 #outdir=ZQ2NuPt2eta_aa_fullrange_UML_widthfix/data
 #outdir=ZQ2NuPt2eta_aa_fullrange_UML/data
 #outdir=Pt2Q2NuZeta_aa_fullrange_UML/data
@@ -11,10 +13,16 @@ outdir=ZQ2NuPt2eta_aa_fullrange_UML_fullRange/data
 #Fe $outdir
 #Fe $outdir -l
 #eof
-
-qsub -F "C  ${outdir}"     bin_data_aa_qsub.sh
-qsub -F "C  ${outdir} -l"  bin_data_aa_qsub.sh
-qsub -F "Pb  ${outdir}"    bin_data_aa_qsub.sh
-qsub -F "Pb  ${outdir} -l" bin_data_aa_qsub.sh
-qsub -F "Fe  ${outdir}"    bin_data_aa_qsub.sh
-qsub -F "Fe  ${outdir} -l" bin_data_aa_qsub.sh
+tt="C"
+#datafile="eta_${tt}D_aa_all_bkg.root"
+datafile=${2/ST/$tt}
+qsub -F "${tt}  ${outdir} ${datafile}"     bin_data_aa_qsub.sh
+qsub -F "${tt}  ${outdir} ${datafile} -l"  bin_data_aa_qsub.sh
+tt="Pb"
+datafile=${2/ST/$tt}
+qsub -F "${tt}  ${outdir} ${datafile}"    bin_data_aa_qsub.sh
+qsub -F "${tt}  ${outdir} ${datafile} -l" bin_data_aa_qsub.sh
+tt="Fe"
+datafile=${2/ST/$tt}
+qsub -F "${tt}  ${outdir} ${datafile}"    bin_data_aa_qsub.sh
+qsub -F "${tt}  ${outdir} ${datafile} -l" bin_data_aa_qsub.sh

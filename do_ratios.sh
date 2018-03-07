@@ -1,8 +1,11 @@
 #!/bin/bash
 acceptance="no"
+if [ "$2" == "-a" ];then 
+    acceptance="yes"
+fi
 opt=""
-acc=""
-if [ $acceptance == "no" ]; then opt="-n"; acc="_na";echo "NOT USING ACCEPTANCE!";
+acc="_AC"
+if [ $acceptance == "no" ]; then opt="-n"; acc="";echo "NOT USING ACCEPTANCE!";
 else 
     echo "USING ACCEPTANCE!"
 fi

@@ -72,6 +72,61 @@ public:
     return p;
   }
 
+  inline Bool_t checkFiducial()
+  {
+    // Converts x,y,z EC hit in CLAS coordinate system
+    // into u,v,w distances of the EC hit, and then test the fiducial cut. (Phonetic names)
+    Bool_t test=kFALSE;
+
+    Float_t ex=0., wy=0., zd=0., yu=0., ve=0.,  wu=0., xi=0., yi=0., zi=0., ec_phy = 0., phy = 0., rot[3][3];
+
+    // Parameters
+    Float_t ec_the = 0.4363323;
+    Float_t ylow = -182.974;
+    Float_t yhi = 189.956;
+    Float_t tgrho = 1.95325; 
+    Float_t sinrho = 0.8901256; 
+    Float_t cosrho = 0.455715;
+    
+    // Variables
+    ex = vx;
+    wy = vy;
+    zd = vz;
+    
+    phy = TMath::ATan2(wy,ex)*57.29578;
+    if(phy<0.){phy = phy + 360;}
+    phy = phy+30.;
+    if(phy>360.){phy = phy-360.;}
+    
+    ec_phy = ((Int_t) (phy/60.))*1.0471975;
+    
+    rot[0][0] = TMath::Cos(ec_the)*TMath::Cos(ec_phy);
+    rot[0][1] = -TMath::Sin(ec_phy);
+    rot[0][2] = TMath::Sin(ec_the)*TMath::Cos(ec_phy);
+    rot[1][0] = TMath::Cos(ec_the)*TMath::Sin(ec_phy);
+    rot[1][1] = TMath::Cos(ec_phy);
+    rot[1][2] = TMath::Sin(ec_the)*TMath::Sin(ec_phy);
+    rot[2][0] = -TMath::Sin(ec_the);
+    rot[2][1] = 0.;
+    rot[2][2] = TMath::Cos(ec_the);
+    
+    yi = ex*rot[0][0]+wy*rot[1][0]+zd*rot[2][0];
+    xi = ex*rot[0][1]+wy*rot[1][1]+zd*rot[2][1];
+    zi = ex*rot[0][2]+wy*rot[1][2]+zd*rot[2][2];
+    zi = zi-510.32 ;
+    
+    yu = (yi-ylow)/sinrho;
+    ve = (yhi-ylow)/tgrho - xi + (yhi-yi)/tgrho;
+    wu = ((yhi-ylow)/tgrho + xi + (yhi-yi)/tgrho)/2./cosrho;
+
+    //U in ]40, 410[ , V in [0,370[ and W in [0,410[.)
+    if ((40<yu&&yu<410) && (ve<370)  && (wu<410))
+      test=kTRUE;
+    //    TVector3 * result3= new TVector3(yu,ve,wu);
+  
+    return test;
+  }
+
   inline Particle operator += (const Particle & q) 
   {
     SetVect(Vect()+q.Vect());
@@ -132,10 +187,8 @@ public:
       kParticles[k]->Boost(-p->BoostVector());
   }
 
-  int addParticle(Particle *p,Float_t ev=0,Bool_t rotfirst=kFALSE)
+  int addParticle(Particle *p,Float_t ev=0,Bool_t rotfirst=kFALSE, Bool_t fid=kFALSE)
   {
-    Npart++;
-    kParticles.push_back(p);
     lastEvent=ev;
     if (Npart==1)
     {
@@ -151,6 +204,11 @@ public:
       p->SetTheta(p->Theta()+Dth);
       p->SetPhi(p->Phi()+Dphi);
     }
+    if (fid && !p->checkFiducial()) return Npart;
+
+    kParticles.push_back(p);
+    Npart++;
+
     return Npart;
   }
 
@@ -1021,7 +1079,7 @@ int main(int argc, char *argv[])
   r.addSecondary("pi-");
   */
 
-      
+  /*      
   //eta -> a a pi+ pi-
   Reaction r("eta -> a a pi+ pi-","etaout_3pi_all.root",false);
   r.addPrimary("eta");
@@ -1029,16 +1087,15 @@ int main(int argc, char *argv[])
   r.addSecondary("gamma");
   r.addSecondary("pi+");
   r.addSecondary("pi-");
-  
+  */
 
-  /*
+  
   //eta -> a a
-  Reaction r("eta -> a a","etaout_aa_all_bkg.root",false);
+  Reaction r("eta -> a a","etaout_aa_all_bkg_fid.root",false);
   r.addPrimary("eta");
   r.addSecondary("gamma");
   r.addSecondary("gamma");  
-  */
-
+  
 
   /*
  //eta -> 3pi0 -> 6a 

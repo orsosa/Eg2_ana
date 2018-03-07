@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
   {
     kMPi0=5.472e-1;//Got sim rec.
     kSPi0=1.94034e-2;//Got sim rec.
-    NbinM=200;
+    NbinM=100;
   }
   else if(gsim)
   {
@@ -127,10 +127,11 @@ int main(int argc, char *argv[])
     system(Form("mkdir -p %s",outdir.Data()));
   }
   //char *infile = Form("%s/pi0_eta_sim_%sD_%s.root",outdir.Data(),st,tt);
+  struct stat sb_f;
   if(infile.IsNull()) infile.Append("pi0_CD.root");
-  if (stat(infile.Data(), &sb) != 0)
+  if (stat(infile.Data(), &sb_f) != 0)
   {
-    std::cout<<Form("Error: file %s doesn't exist!\n",infile.Data());
+    std::cout<<Form("Error: file or directory %s doesn't exist!\n",infile.Data());
     exit(1);
   }
   std::string pd=Form("%s/rspic",outdir.Data());
@@ -140,17 +141,34 @@ int main(int argc, char *argv[])
       system(Form("mkdir -p %s",picdir));
   }
 
-  TFile * f  = new TFile(infile.Data(), "read");
-  //  TFile * f2 = new TFile("local/prune_simul.root","read"); //To get GSIM
-  c  = new TCanvas("c", "The canvas",920,690);
-  if (gsim) c->SetLogy();
-  TTree *t = (TTree *) f->Get("outdata");
-  if (gsim) t->SetEstimate(10e6);
-  TTree *tb = (TTree *) f->Get("outbkgnd");
-  TTree*te = (TTree *) f->Get("ElecData");
-  //pt1 = new TNtuple("pt1","parameters 1","p0:p1:p2:p3:p4:binq2:binnu:binz");
+  TFile * f;
+  
+  TChain *t,*tb,*te;
+  t = new TChain("outdata","to catch hadrons");
+  tb = new TChain("outbkgnd","to catch background");
+  te = new TChain("ElecData","to catch electrons");
+
+  if (S_ISREG(sb_f.st_mode))
+  {
+    //   f = new TFile(infile.Data(), "read");
+    t->Add(infile + "/outdata");
+    tb->Add(infile + "/outbkgnd");
+    te->Add(infile + "/ElecData");
+  }  
+  else if (S_ISDIR(sb_f.st_mode))
+  {
+    t->Add(infile + "/*.root/outdata");
+    tb->Add(infile + "/*.root/outbkgnd");
+    te->Add(infile + "/*.root/ElecData");
+  }
+//pt1 = new TNtuple("pt1","parameters 1","p0:p1:p2:p3:p4:binq2:binnu:binz");
   // pt2 = new TNtuple("pt2","parameters 2","p0:p1:p2:p3:p4:binpt2:binnu:binz");
   //  read_parameters(outdir.Data());
+
+  c  = new TCanvas("c", "The canvas",920,690);
+  if (gsim) c->SetLogy();
+  if (gsim) t->SetEstimate(10e6);
+
 
   ///////////////// MASS PLOT RANGE ///////////////////////////////////
 
@@ -160,7 +178,8 @@ int main(int argc, char *argv[])
   if(gsim)
     {rangeFit[0]=0.48; rangeFit[1]=.62;}//only eta fit
   else
-    {rangeFit[0]=0.35; rangeFit[1]=.75; }//only eta  fit
+    {rangeFit[0]=0.2; rangeFit[1]=.8; }//only eta  fit
+  //{rangeFit[0]=0.35; rangeFit[1]=.75; }//only eta  fit
   //{rangeFit[0]=0.05; rangeFit[1]=.75;} //full range  fit
   
   //Float_t minRange = 0.74, maxRange = 0.82; // omega fit
@@ -360,6 +379,7 @@ int main(int argc, char *argv[])
       ds->add(meta);
     }
 
+
 /*
 /////// Get background data for the given bin ////////////////
 
@@ -389,6 +409,7 @@ int main(int argc, char *argv[])
 /////// fit invariant mass spectrum //////////
     //RooPlot* 
     //Neta=3000.;Nb=3000.;
+
     RooPlot* frame;
     if (gsim)
       frame=fit_pdf_aa_gsim(ds,1, 0.55,0.045,w,rangeFit); // fit everithing on eta range.
@@ -398,14 +419,11 @@ int main(int argc, char *argv[])
     //RooPlot* frame=fit_pdf_aa_full(Npi0, Neta, Nm,  Nb, ds,&meta, 1, 0.55,0.045,w,rangeFit); // fit everithing.
 
 /////////////////////////////////////////////
-
-
     RooRealVar *Neta,*Nb;
     Neta =w->var("Neta");
     Nb=w->var("Nb");
-   
-    Float_t mbratio=Neta->getVal()/Nb->getVal();
 
+    Float_t mbratio=Neta->getVal()/Nb->getVal();
     //Float_t Nh_fine=get_Nh(hM_fine,minRange,maxRange,2);
     //Float_t Nh=get_Nh(hM,minRange,maxRange,2);
     //cout<<"Nh; coarse: "<<Nh<<" fine: "<<Nh_fine;
@@ -424,6 +442,11 @@ int main(int argc, char *argv[])
     /////// MAKING MAIN PICTURE /////////////
     c->cd(1);
 
+    if (gsim){
+      c->GetPad(1)->SetLogy();
+      frame->GetXaxis()->SetRangeUser(0.5,0.6);
+      frame->GetYaxis()->SetRangeUser(0.001,2e6);
+    }
     frame->GetYaxis()->SetTitleSize(0.8);
     frame->SetTitle("");
     frame->Draw();
@@ -436,7 +459,7 @@ int main(int argc, char *argv[])
     
     RooDataHist *modelhist = model->generateBinned(meta,0,true,true);
     w->import(*modelhist);
-    TH1F * hm= (TH1F *)modelhist->createHistogram("hm",meta,Binning(100,minRange,maxRange));
+    TH1F * hm= (TH1F *)modelhist->createHistogram("hm",meta,Binning(NbinM,minRange,maxRange));
 
     //////// making ratio plot ////////
     TH1F *hratio = (TH1F *) hdata->Clone("hratio");
@@ -506,8 +529,8 @@ int main(int argc, char *argv[])
     else c->SaveAs(Form("%s/hM_mov.gif",outdir.Data()));
 
     
-    delete hM;
-    delete fmb;
+    //    delete hM;
+    // delete fmb;
     
   }
 

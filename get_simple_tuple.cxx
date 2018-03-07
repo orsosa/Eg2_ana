@@ -67,15 +67,15 @@ int main(int argc, char **argv)
     output = new TFile("local/prune_simul.root", "RECREATE", "Data of particles");
   }
 
-  TNtuple *tElec = new TNtuple("e_rec","All Electrons","Q2:W:Nu:vzec:Pex:Pey:Pez:event");
+  TNtuple *tElec = new TNtuple("e_rec","All Electrons","Q2:W:Nu:vxec:vyec:vzec:vxe:vye:vze:Pex:Pey:Pez:event");
   Float_t DataElec[tElec->GetNvar()];
 
   TNtuple *ntuple = new TNtuple(NtupleName,"stable particles",VarList);
   TNtuple *ntuple_thrown = 0;
   TNtuple *e_thrown=0;
   if(simul_key == 1) {
-    ntuple_thrown = new TNtuple("ntuple_thrown","pi0 pluses",VarList);
-    e_thrown = new TNtuple("e_thrown","All Electrons","Q2:W:Nu:vzec:Pex:Pey:Pez:event");
+    ntuple_thrown = new TNtuple("ntuple_thrown","particles pluses",VarList);
+    e_thrown = new TNtuple("e_thrown","All Electrons","Q2:W:Nu:vxec:vyec:vzec:vxe:vye:vze:Pex:Pey:Pez:event");
 }
 
 //  TH1F *ht = new TH1F("ht","tdiff",1000,-15,15); 
@@ -128,16 +128,24 @@ int main(int argc, char **argv)
     //if(nRows>0 && (t->GetCategorization(0,tt)) == "electron" && t -> Q2() > 1. && t -> W() > 2. && t -> Nu() / 5.015 < 0.85)
     if(nRows>0 && (t->GetCategorization(0,tt)) == "electron")  
     {
+      //Q2:W:Nu:vxec:vyec:vzec:vxe:vye:vze:Pex:Pey:Pez:event
       DataElec[0] = t -> Q2();
       DataElec[1] = t -> W();
       DataElec[2] = t -> Nu();
       vert = t->GetCorrectedVert();
+      Float_t vxec=vert->X(); 
+      Float_t vyec=vert->Y(); 
       Float_t vzec=vert->Z(); 
-      DataElec[3] = vzec; 
-      DataElec[4] = t -> Px(0);
-      DataElec[5] = t -> Py(0);
-      DataElec[6] = t -> Pz(0);
-      DataElec[7] = k;
+      DataElec[3] = vxec; 
+      DataElec[4] = vyec; 
+      DataElec[5] = vzec;
+      DataElec[6] = t->X(0);
+      DataElec[7] = t->Y(0);
+      DataElec[8] = t->Z(0);
+      DataElec[9] = t -> Px(0);
+      DataElec[10] = t -> Py(0);
+      DataElec[11] = t -> Pz(0);
+      DataElec[12] = k;
 
       tElec->Fill(DataElec);
 

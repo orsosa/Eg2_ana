@@ -22,11 +22,14 @@
   2.1 eta_id.cxx //
   or 2.1 run_eta_id.sh // optional, procesing on farm.
   or 2.1 get_pid.sh sim | data | all  to send sim, data or all to be processed in the farm, based on run_eta_id.sh
+BINNING
       3.1 bin_data.sh
-      or 3.1 send_bin_data_aa.sh // optional, procesing on farm for aa channel.
+      3.1 send_bin_data_aa.sh // optional, procesing on farm for aa channel.
+
   2.2 eta_id.cxx for simulation
   or 2.2 run_eta_id.sh // optional, procesing on farm.
-      3.2 bin_sim.sh
+      3.2 bin_sim.sh   
+      3.2 send_bin_data_aa.sh// optional, procesing on farm.	
 
   4.1 do_ratios.sh <dir> // It will output Ratios.
       	  

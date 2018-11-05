@@ -24,6 +24,7 @@
 #include <string.h>
 #include "do_pid.h"
 
+bool DEBUG=false;
 TH1F *hW;
 TH1F *hW2;
 TH1F *hWmb;
@@ -42,14 +43,10 @@ TNtuple *tuple;
 //TNtuple *tuple_sim;
 TNtuple *tuplemb;
 TNtuple *tuplePi0_gamma, *tupleGamma;
-Float_t kEbeam=5.014,E,Ee,Ee_prev,Ep,P,Px,Py,Pz,evnt,evnt_prev,Zec,Zec_prev,Yec,Yec_prev,Xec,Xec_prev,TEc,Q2,Q2_prev,W,W_prev,Nu,Nu_prev,Pex,Pex_prev,Pey,Pey_prev,Pez,Pez_prev,pid,vx,vy,vz;
+Float_t kEbeam=5.014,E,Ee,Ee_prev,Ep,P,Px,Py,Pz,evnt,evnt_prev,Zec,Zec_prev,Yec,Yec_prev,Xec,Xec_prev,TEc,Q2,Q2_prev,W,W_prev,Nu,Nu_prev,Pex,Pex_prev,Pey,Pey_prev,Pez,Pez_prev,TargType,TargType_prev,TargTypeO=0,TargTypeO_prev=0,pid,vx,vy,vz,ECX,ECY,ECZ;
 long Ne = -1;
 char st[3]= "C"; // solid target: C Fe Pb
 char tt[3] = "C"; // cut on solid target or Deuterium : (st) or D.
-Float_t zBin[6]={0.3, 0.4, 0.5, 0.6, 0.7, 0.8};
-Float_t Q2Bin[4]={1.0, 1.33, 1.77, 4.1};
-Float_t nuBin[4]={2.2, 3.2, 3.73, 4.25};
-Float_t Pt2Bin[7]={0., 0.1, 0.25, 0.4, 0.55, 0.75, 0.9};
 
 Float_t kMprt=0.938272, kMntr =0.939565;
 TClonesArray *P4Arr;
@@ -143,7 +140,7 @@ class Combo
 {
 public:
   std::vector<Particle*> kParticles;
-  static const Float_t kQ2Tol=0.3,kNuTol=0.3;
+  static constexpr Float_t kQ2Tol=0.3,kNuTol=0.3;
   int Npart;
   Float_t lastEvent,kQ2,kNu;
   TLorentzVector *q4; // virtual photon 4th vector.
@@ -167,6 +164,8 @@ public:
   inline  Double_t P(){return getSum().P();}
   inline  Double_t E(){return getSum().E();}
   inline  Double_t M(){return getSum().M();}
+  inline  Double_t M2(){return getSum().M2();}
+
 
 
   //  Combo(Particle *&p): {}
@@ -182,15 +181,15 @@ public:
 
   void boost() //Go to CM frame.
   {
-    Particle *p=&getSum();
+    //Particle *p=&getSum();
     for (int k =0;k<Npart;k++)
-      kParticles[k]->Boost(-p->BoostVector());
+      kParticles[k]->Boost(-getSum().BoostVector());
   }
 
   int addParticle(Particle *p,Float_t ev=0,Bool_t rotfirst=kFALSE, Bool_t fid=kFALSE)
   {
     lastEvent=ev;
-    if (Npart==1)
+    if (Npart==0)
     {
       kQ2= Q2; // using global variable, must be changed!.
       kNu= Nu; // using global variable, must be changed!.
@@ -199,13 +198,13 @@ public:
     else if (rotfirst)
     {
       TLorentzVector *q4n = new TLorentzVector(-Pex,-Pey,kEbeam-Pez,kEbeam-Ee);
-      Double_t Dth = q4->Theta() - q4n->Theta();
+      // Double_t Dth = q4->Theta() - q4n->Theta(); //no theta rotation, beam direction.
       Double_t Dphi = q4->Phi() - q4n->Phi();
-      p->SetTheta(p->Theta()+Dth);
+      //p->SetTheta(p->Theta()+Dth);
       p->SetPhi(p->Phi()+Dphi);
     }
     if (fid && !p->checkFiducial()) return Npart;
-
+    // std::cout<<__FILE__<<"::"<<__LINE__<<std::endl;
     kParticles.push_back(p);
     Npart++;
 
@@ -323,8 +322,8 @@ public:
   int kPPid;
   int kNSecondary;
   std::vector<int>::iterator kSIt;
-  std::vector<int> kSPid;
-  std::map<int,int> kNSPid;
+  std::vector<int> kSPid; //Amount of secondary particles for a given pid.
+  std::map<int,int> kNSPid;//Amount of secondary pid particles required.
   Reaction(){strcpy(name,"eta -> pi+ pi- a"),strcpy(filename,"test_eta_pippima.root");init();}
   Reaction(const char *n,const char *fn,bool fEMatch=false): fEMatch(fEMatch) {strcpy(name,n); strcpy(filename,fn); init();}
   int store()
@@ -371,7 +370,7 @@ public:
     kOutFile = new TFile(filename,"recreate");
     //kOutData=new TNtuple("outdata",Form("%s",name),"M:Phx:Phy:Phz:Nu:Q2:Z:Cospq:Pt2:Event:M2_01:M2_02:M_c:Phx_c:Phy_c:Phz_c:Z_c:Cospq_c:Pt2_c:Chi2:qx1:qy1:qz1:qx2:qy2:qz2");
     //kOutData = new TNtuple("outdata",Form("%s",name),
-    TString varlist="M:Phx:Phy:Phz:Nu:Q2:Z:Cospq:Pt2:Event:M2_01:M2_02:vzec:z1:z2:z3:W:vxec:vyec:qx1:qy1:qz1:qx2:qy2:qz2:E1:E2:E1c:E2c:x1:y1:x2:y2";
+    TString varlist="M:Phx:Phy:Phz:Nu:Q2:Z:Cospq:Pt2:Event:M2_01:M2_02:vzec:z1:z2:z3:W:vxec:vyec:qx1:qy1:qz1:qx2:qy2:qz2:E1:E2:E1c:E2c:x1:y1:x2:y2:TargType:TargTypeO:PhiPQ";
     kElecData = new TNtuple("ElecData",Form("%s",name),"Nu:Q2:Event:vzec:Ee:Pex:Pey:Pez:W");
 
 
@@ -417,9 +416,23 @@ public:
     Double_t Pz = comb->Pz();
     Double_t E = comb->E();
     Double_t P2 = comb->P2();
-    Double_t M =  comb->M();
+    Double_t M2 = comb->M2();
+    Double_t M =  (M2>=0)?TMath::Sqrt(M2):-1.0;
     Float_t cospq = ((kEbeam-Pez_prev)*Pz - Pex_prev*Px - Pey_prev*Py)/( sqrt((Q2_prev + Nu_prev*Nu_prev)*P2) );
     Float_t Pt2 = P2*(1-cospq*cospq);
+
+    Double_t phi_pq;
+    TVector3 Vhad(Px,Py,Pz);
+    TVector3 Vvirt(-Pex_prev,-Pey_prev,kEbeam-Pez_prev);
+    Double_t phi_z = TMath::Pi()-Vvirt.Phi();
+    Vvirt.RotateZ(phi_z);
+    Vhad.RotateZ(phi_z);
+    TVector3 Vhelp(0.,0.,1.);
+    Double_t phi_y = Vvirt.Angle(Vhelp);
+    Vvirt.RotateY(phi_y);
+    Vhad.RotateY(phi_y);
+    phi_pq=Vhad.Phi() * 180./(TMath::Pi());
+
     
     kData[0] = M;
     kData[1] = Px;
@@ -427,12 +440,12 @@ public:
     kData[3] = Pz;
     kData[4] = Nu_prev;
     kData[5] = Q2_prev;
-    kData[6] = E/Nu_prev;
+    kData[6] = (Float_t)E/Nu_prev;
     kData[7] = cospq;
     kData[8] = Pt2;
     kData[9] = evnt_prev;
 
-    //    std::cout<<std::endl<<__LINE__<<": Npart:"<<comb->kParticles.size()<<std::endl;
+    //    if (DEBUG) std::cout<<std::endl<<__LINE__<<": Npart:"<<comb->kParticles.size()<<std::endl;
 
     kData[10]=((comb->Npart==3)? ( *(*comb)[0] + *(*comb)[1]).M2() : 0);
     kData[11]=((comb->Npart==3)? ( *(*comb)[0] + *(*comb)[2]).M2() : 0);
@@ -470,7 +483,9 @@ public:
     kData[30] =(*comb)[0]->vy;
     kData[31] =((comb->Npart>1)?(*comb)[1]->vx:0);
     kData[32] =((comb->Npart>1)?(*comb)[1]->vy:0);
-
+    kData[33] = TargType_prev;
+    kData[34] = TargTypeO_prev;
+    kData[35] = phi_pq;
     /*  
     Double_t *W = new Double_t[4];
     Double_t *Wa = new Double_t[4];
@@ -544,10 +559,24 @@ public:
 	dist=TMath::Abs(M2_etaN - M2_eta0);
       }
     }
-    */
+    
     //Int_t ind[4]={order/int(1e3), order%int(1e3)/int(1e2), order%int(1e2)/int(1e1), order%int(1e1)};
+    */
     ////////////////////////////////////////////////////////
 
+    for (int k=0;k<kNSecondary;k++)
+    {
+      
+      Double_t px= (*comb)[k]->Px();
+      Double_t py= (*comb)[k]->Py();
+      Double_t pz= (*comb)[k]->Pz();
+      Double_t e= (*comb)[k]->E();
+      
+      new ((*P4Arr)[k]) TLorentzVector(px,py,pz,e);
+    }
+
+
+    /*
     Int_t ind[4]={1,2,3,4};
     for (int k=0;k<kNSecondary;k++)
     {
@@ -559,6 +588,8 @@ public:
       
       new ((*P4Arr)[k]) TLorentzVector(px,py,pz,e);
     }
+    */
+
 
     return ttree->Fill();
       
@@ -705,30 +736,46 @@ public:
     Pey_prev=Pey;
     Pez_prev=Pez;
     Ee_prev = Ee;
+    TargType_prev=TargType;
+    TargTypeO_prev=TargTypeO;
   }
 
   //int takeN(int N,int kspid, int pos=0,Particle p=Particle(),int count=0)
-  int takeN(int N,int kspid, int pos=0,Combo *c= new Combo() ,int count=0)
+  //  int takeN(int N,int kspid, int pos=0,Combo *c= new Combo() ,int count=0)
+  int takeN(int N,int kspid, int pos=0,Combo *c= 0 ,int count=0)
   {
+    Combo *c_new;
+    if (DEBUG) std::cout<<"### take N:  "<<N<<"##############"<<std::endl; 
     if (N<1) return -1;
     if (N!=1)
     {
       for (int k =pos;k<kSecondary[kspid].size()-N+1;k++)
       {
-	c->addParticle(kSecondary[kspid][pos]);
-	count=takeN(N-1,kspid,pos+1,c,count);
+	if (c==0) c_new = new Combo();
+	else c_new = new Combo(*c);
+
+	c_new->addParticle(kSecondary[kspid][pos]);
+	count=takeN(N-1,kspid,k+1,c_new,count);
       }
     }
 
     else
-    {
+   {
+     
       for (int k=pos;k<kSecondary[kspid].size();k++)
       {
-	c->addParticle(kSecondary[kspid][k]);
-	kCombo[kspid].push_back(new Combo(*c) );
+	if (c==0) c_new = new Combo();
+	else c_new = new Combo(*c);
+
+	c_new->addParticle(kSecondary[kspid][k]);
+	
+	if (DEBUG) std::cout<<"############ Npart from takeN: "<<c_new->Npart<<"#### pid: "<<kSPid[kspid]<<"#############"<<std::endl;
+	//	kCombo[kspid].push_back(new Combo(*c) );
+	kCombo[kspid].push_back(c_new);
 	//kParticles.push_back(new Particle(*kSecondary[kspid][k]));
 	//std::cout<<__LINE__<<" "<< kCombo[kspid].back()->M()<<std::endl;
 	count++;
+
       }
     }
     return count;
@@ -745,6 +792,19 @@ public:
       }
     }
     return count;
+  }
+  
+  int correct_momentum()
+  {
+    Float_t Rt = TMath::Sqrt( ECX*ECX + ECY*ECY );
+    Float_t R = TMath::Sqrt( ECX*ECX + ECY*ECY + (ECZ-Zec)*(ECZ -Zec) );
+    Float_t theta_gam=TMath::ASin(Rt/R);
+    Float_t phi_gam = TMath::ATan2(ECY,ECX);
+    Px=Ep*TMath::Sin(theta_gam)*TMath::Cos(phi_gam);
+    Py=Ep*TMath::Sin(theta_gam)*TMath::Sin(phi_gam);
+    Pz=Ep*TMath::Cos(theta_gam);
+    
+    return 0;
   }
 
   int getCombinations(TChain *t)
@@ -765,6 +825,9 @@ public:
       {
 	Ep = (pid==22)? (E/0.272):( (pid==211 || pid==-211)?(sqrt(P*P+ TMath::Power(TDatabasePDG::Instance()->GetParticle("pi-")->Mass(),2)) ):E);
 
+	if (pid==22)
+	  correct_momentum();
+	
       }
       if (evnt==evnt_prev)
       {
@@ -782,13 +845,15 @@ public:
 	if (checkMinPart())
 	{
 	  int Npart = 1;
+
 	  for (int k =0;k<kSPid.size();k++)
 	  {
-
+	    if (DEBUG) std::cout<<"############ Nsecondary of pid: "<<kSPid[k]<<" ::: "<<kSecondary[k].size()<<"###########"<<std::endl; 
 	    takeN(kNSPid[kSPid[k]] ,k);
 
 	    Npart*=kCombo[k].size();
 	  }
+	  if (DEBUG) std::cout<<"############ N candidates for primary: "<<Npart<<"####################\n##########################"<<std::endl;
 	  for(int k=0;k<Npart;k++)
 	  {
 	    kPrimary = new Combo();
@@ -802,6 +867,7 @@ public:
 
 	      div*=size;
 	    }
+	    //  if (DEBUG) std::cout<<"############ Npart from primary: "<<kPrimary->Npart<<"####################"<<std::endl;
   	    fill();
 	    delete kPrimary;
 	  }
@@ -861,6 +927,7 @@ public:
       {
 	if (checkMinPart(kBkgnd[i]))
 	{
+	  //	  std::cout<<__FILE__<<"::"<<__LINE__<<std::endl;
 	  fill(kBkgnd[i],kOutBkgnd);
 	  delete kBkgnd[i];
 	  kBkgnd.erase(kBkgnd.begin()+i);
@@ -883,6 +950,10 @@ public:
     {
       t->GetEntry(i);
       Ep = (pid==22)? (E/0.272):sqrt(P*P+ TMath::Power(TDatabasePDG::Instance()->GetParticle("pi-")->Mass(),2));
+      
+      if (pid==22)
+	correct_momentum();
+
       if (evnt==evnt_prev)
       {
 	//std::cout<<__LINE__<<" "<<findSecondary()<<std::endl;
@@ -967,6 +1038,11 @@ int main(int argc, char *argv[])
   t->SetBranchStatus("vxh",1);
   t->SetBranchStatus("vyh",1);
   t->SetBranchStatus("vzh",1);
+  t->SetBranchStatus("TargType",1);
+  t->SetBranchStatus("ECX",1);
+  t->SetBranchStatus("ECY",1);
+  t->SetBranchStatus("ECZ",1);
+  //  t->SetBranchStatus("TargTypeO",1);
 
 
   t->SetBranchAddress("E",&E);
@@ -990,6 +1066,11 @@ int main(int argc, char *argv[])
   t->SetBranchAddress("vxh",&vx);
   t->SetBranchAddress("vyh",&vy);
   t->SetBranchAddress("vzh",&vz);
+  t->SetBranchAddress("TargType",&TargType);
+  t->SetBranchAddress("ECX",&ECX);
+  t->SetBranchAddress("ECY",&ECY);
+  t->SetBranchAddress("ECZ",&ECZ);
+  //t->SetBranchAddress("TargTypeO",&TargTypeO);
 
   //  t->SetMaxEntryLoop(1e4);
   //  t->SetAlias("Eh",Form("(pid==22)*E/0.272 + (pid!=22)*(TMath::Sqrt(P**2 + %f**2)",TDatabasePDG::Instance()->GetParticle("pi-")->Mass() ));
@@ -1025,9 +1106,9 @@ int main(int argc, char *argv[])
   r.addSecondary("pi+");
   */ 
 
-  /*
-  // eta -> pi0 pi0 -> 6a
-  Reaction r("eta -> 6a","test_6a.root",true); //exact match of secondary
+  /*  
+  // eta -> pi0 pi0 pi0 -> 6a
+  Reaction r("eta -> 6a","etaout_6a_all.root",false); //
   r.addPrimary("eta");
   r.addSecondary("gamma");
   r.addSecondary("gamma");
@@ -1079,23 +1160,31 @@ int main(int argc, char *argv[])
   r.addSecondary("pi-");
   */
 
-  /*      
+        
   //eta -> a a pi+ pi-
-  Reaction r("eta -> a a pi+ pi-","etaout_3pi_all.root",false);
+  Reaction r("eta -> a a pi+ pi-","etaout_pippimaa_all_eta_exact.root",true);
   r.addPrimary("eta");
   r.addSecondary("gamma");
   r.addSecondary("gamma");
   r.addSecondary("pi+");
   r.addSecondary("pi-");
-  */
-
   
+
+  /*
   //eta -> a a
-  Reaction r("eta -> a a","etaout_aa_all_bkg_fid.root",false);
+  Reaction r("eta -> a a","etaout_aa_only.root",true);
   r.addPrimary("eta");
   r.addSecondary("gamma");
   r.addSecondary("gamma");  
-  
+  */
+
+  /*
+  //eta -> a a
+  Reaction r("eta -> a a","etaout_aa_all_bk.root",false);
+  r.addPrimary("eta");
+  r.addSecondary("gamma");
+  r.addSecondary("gamma");  
+  */
 
   /*
  //eta -> 3pi0 -> 6a 
